@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='blqt',
+    name='BellmanFinance',
     version='',
-    packages=['blqt', 'blqt.backtest', 'blqt.backtest.old', 'blqt.technical', 'blqt.data_utils',
+    packages=['blqt', 'blqt.rl_envs', 'blqt.backtest', 'blqt.backtest.old', 'blqt.technical', 'blqt.data_utils',
               'blqt.data_utils.crawlers', 'blqt.data_utils.crawlers.bitmex'],
     url='',
     license='',
