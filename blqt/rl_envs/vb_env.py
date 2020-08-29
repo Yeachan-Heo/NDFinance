@@ -7,6 +7,7 @@ from talib import abstract as ta
 import ray
 import ray.tune as tune
 import ray.rllib.agents.sac as sac
+import ray.rllib.agents.ppo as ppo
 
 def make_data(path):
     df = pd.read_csv(path)
@@ -32,12 +33,14 @@ def TA_BBANDS(prices:np.ndarray,
     return up, middle, low, ch, b
 
 class VBEnv(gym.Env):
-    def __init__(self,
-                 data_path_1day,
-                 data_path_1min,
-                 from_timeindex=-np.inf,
-                 to_timeindex=np.inf,
-                 initial_margin=10000000):
+    def __init__(self, env_config):
+
+        data_path_1min = env_config["data_path_1min"]
+        data_path_1day = env_config["data_path_1day"]
+        from_timeindex = env_config["from_timeindex"]
+        to_timeindex = env_config["to_timeindex"]
+
+        initial_margin = 10000000
 
         super(VBEnv, self).__init__()
 
@@ -72,7 +75,7 @@ class VBEnv(gym.Env):
 
         self.observation_space = gym.spaces.Box(
             np.zeros(5)-np.inf, np.zeros(5)+np.inf)
-        self.action_space = gym.spaces.Box(np.array([0, 0]), np.array([2, 2]))
+        self.action_space = gym.spaces.Box(np.array([0, 0]), np.array([1.2, 1]))
     
     def logic(self):
         dt = datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)
@@ -96,7 +99,7 @@ class VBEnv(gym.Env):
             low_breakout = self.curr_start - k_range
             if (high_breakout <= self.curr_high):
                 self.broker.order_target_weight_pv("Ticker", self.bet, high_breakout)
-            elif (high_breakout >= self.curr_low):
+            elif (low_breakout >= self.curr_low):
                 self.broker.order_target_weight_pv("Ticker", -self.bet, low_breakout)
 
         else:
@@ -127,11 +130,7 @@ class VBEnv(gym.Env):
 
     @staticmethod
     def convert_reward(ret):
-        if ret > 0:
-            return ret
-        elif ret < 0:
-            return -np.exp(-ret)
-        return 0
+        return ret
 
     def _get_observation(self):
         ma20 = self.data_provider.current("Ticker", "MA20", timeframe=TimeFrames.Day)
@@ -168,7 +167,6 @@ class VBEnv(gym.Env):
     def step(self, action:np.ndarray):
         self.k = action[0]
         self.bet = action[1]
-
         ret = self.run_logic()
         if ret is None:
             reward = 0
@@ -176,30 +174,36 @@ class VBEnv(gym.Env):
             reward = self.convert_reward(ret)
         next_observation = self._get_observation()
         done = True if (self.indexer.lastidx-2) == (self.indexer.idx) else False
-        return reward, next_observation, done, {}
+        if done:
+            print(f"overall P&L : {np.round(self.broker.pv/self.initial_margin*100-100, 2)}%, k:{self.k}, bet:{self.bet}")
+        return next_observation, reward, done, {}
 
-
+from pprint import pprint
 if __name__ == '__main__':
     config = sac.DEFAULT_CONFIG.copy()
-    config["num_workers"] = 4
-    config["num_gpus"] = 1
+    pprint(config)
     config["env"] = VBEnv
+
     config["env_config"] = {
-        "data_path_1day":
-            "../../data/ETHUSD_20180802-20200824_1day.csv",
-        "data_path_1min":
-            "../../data/ETHUSD_20180802-20200824_1hour.csv",
+        "data_path_1min" : "/tmp/pycharm_project_334/data/ETHUSD_20180802-20200824_1hour.csv",
+        "data_path_1day": "/tmp/pycharm_project_334/data/ETHUSD_20180802-20200824_1day.csv",
+        "from_timeindex" : -np.inf,
+        "to_timeindex" : np.inf
     }
-    env = VBEnv("../../data/ETHUSD_20180802-20200824_1day.csv", "../../data/ETHUSD_20180802-20200824_1hour.csv")
+
+    config["framework"] = "torch"
+    config["num_workers"] = 11
+
     tune.run(
         sac.SACTrainer,
         config=config,
-        local_dir="/content/gdrive/My Drive/VB_Agent/",
+        checkpoint_freq=100,
         checkpoint_at_end=True,
-        checkpoint_freq=1000,
+        local_dir="./VB_Env/",
+        restore="./VB_Env/SAC/SAC_VBEnv_0_2020-08-29_18-37-54tv1ehmdp/checkpoint_1500/checkpoint-1500"
     )
 
-        
+
         
 
 
