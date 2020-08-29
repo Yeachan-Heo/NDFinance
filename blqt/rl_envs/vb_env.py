@@ -197,10 +197,10 @@ if __name__ == '__main__':
     tune.run(
         sac.SACTrainer,
         config=config,
-        checkpoint_freq=100,
+        checkpoint_freq=100000,
         checkpoint_at_end=True,
         local_dir="./VB_Env/",
-        restore="./VB_Env/SAC/SAC_VBEnv_0_2020-08-29_18-37-54tv1ehmdp/checkpoint_1500/checkpoint-1500"
+        stop={"num_steps_trained":100000000}
     )
 
 
