@@ -8,6 +8,8 @@ import ray
 import ray.tune as tune
 import ray.rllib.agents.sac as sac
 import ray.rllib.agents.ppo as ppo
+import ray.rllib.agents.ddpg as ddpg
+
 
 def make_data(path):
     df = pd.read_csv(path)
@@ -58,7 +60,7 @@ class VBEnv(gym.Env):
 
         self.indexer = TimeIndexer(data_1min["timestamp"],
                               from_timestamp=np.clip(data_1day["timestamp"][20], from_timeindex, np.inf),
-                              to_timestamp=np.clip(data_1min["timestamp"][-1], -np.inf, to_timeindex))
+                              to_timestamp=np.clip(data_1day["timestamp"][-2], -np.inf, to_timeindex))
 
         self.data_provider = data_providers.BacktestDataProvider()
         self.data_provider.register_time_indexer(self.indexer)
@@ -70,7 +72,7 @@ class VBEnv(gym.Env):
         self.broker.initialize(margin=initial_margin)
         self.initial_margin = initial_margin
 
-        Ticker = FinancialProduct("Ticker", 0.25, 4, 0.0003, 0.1, 0.9, 0.000001)
+        Ticker = FinancialProduct("Ticker", 1, 1, 0.0003, 1, 1, 0.000001)
         self.broker.add_ticker(Ticker)
 
         self.observation_space = gym.spaces.Box(
@@ -81,11 +83,14 @@ class VBEnv(gym.Env):
         dt = datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)
         day = dt.day
 
+        day_changed = False
         if day != self.prev_day:
             self.prev_day = day
             self.range = self.data_provider.current("Ticker", "RANGE", timeframe=TimeFrames.Day)
             self.curr_start = self.data_provider.current("Ticker", "open", timeframe=TimeFrames.Minute)
             self.curr_low, self.curr_high = np.inf, 0
+            day_changed = True
+
 
         high, low = self.data_provider.current("Ticker", "high", timeframe=TimeFrames.Minute), \
                     self.data_provider.current("Ticker", "low", timeframe=TimeFrames.Minute)
@@ -94,13 +99,15 @@ class VBEnv(gym.Env):
         if self.curr_low > low: self.curr_low = low
 
         if not self.broker.positions:
+            if day_changed:
+                return -0.03
             k_range = self.k * self.range
             high_breakout = self.curr_start + k_range
             low_breakout = self.curr_start - k_range
             if (high_breakout <= self.curr_high):
-                self.broker.order_target_weight_pv("Ticker", self.bet, high_breakout)
+                self.broker.order_target_weight_pv("Ticker", self.bet)
             elif (low_breakout >= self.curr_low):
-                self.broker.order_target_weight_pv("Ticker", -self.bet, low_breakout)
+                self.broker.order_target_weight_pv("Ticker", -self.bet)
 
         else:
             dt_pos = datetime.datetime.fromtimestamp(self.broker.positions["Ticker"].log[-1].timestamp)
@@ -156,6 +163,8 @@ class VBEnv(gym.Env):
         self.temp = 0
         self.broker.trade_hist = []
         self.broker.trade_hist_rate = []
+        self.ks = []
+        self.bets = []
 
         while True:
             self.indexer.move()
@@ -166,7 +175,9 @@ class VBEnv(gym.Env):
         
     def step(self, action:np.ndarray):
         self.k = action[0]
+        self.ks.append(self.k)
         self.bet = action[1]
+        self.bets.append(self.bet)
         ret = self.run_logic()
         if ret is None:
             reward = 0
@@ -175,18 +186,18 @@ class VBEnv(gym.Env):
         next_observation = self._get_observation()
         done = True if (self.indexer.lastidx-2) == (self.indexer.idx) else False
         if done:
-            print(f"overall P&L : {np.round(self.broker.pv/self.initial_margin*100-100, 2)}%, k:{self.k}, bet:{self.bet}")
+            print(f"overall P&L : {np.round(self.broker.pv/self.initial_margin*100-100, 2)}%, "
+                  f"k:{np.round(np.mean(self.k), 2)}, bet:{np.round(np.mean(self.bet), 2)}")
         return next_observation, reward, done, {}
 
 from pprint import pprint
 if __name__ == '__main__':
-    config = sac.DEFAULT_CONFIG.copy()
-    pprint(config)
+    config = ppo.DEFAULT_CONFIG.copy()
     config["env"] = VBEnv
 
     config["env_config"] = {
-        "data_path_1min" : "/tmp/pycharm_project_334/data/ETHUSD_20180802-20200824_1hour.csv",
-        "data_path_1day": "/tmp/pycharm_project_334/data/ETHUSD_20180802-20200824_1day.csv",
+        "data_path_1min" : "/tmp/pycharm_project_716/data/ETHUSD_20180802-20200824_1hour.csv",
+        "data_path_1day": "/tmp/pycharm_project_716/data/ETHUSD_20180802-20200824_1day.csv",
         "from_timeindex" : -np.inf,
         "to_timeindex" : np.inf
     }
@@ -195,16 +206,18 @@ if __name__ == '__main__':
     config["num_workers"] = 11
 
     tune.run(
-        sac.SACTrainer,
+        ppo.PPOTrainer,
         config=config,
-        checkpoint_freq=100000,
+        checkpoint_freq=100,
         checkpoint_at_end=True,
         local_dir="./VB_Env/",
-        stop={"num_steps_trained":100000000}
     )
 
 
-        
+class VBEnv_V2(VBEnv):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V2, self).__init__(*args, **kwargs)
+        self.action_space = gym.spaces.Box(np.array([0.5, 0]), np.array([1.2, 1]))
 
 
 

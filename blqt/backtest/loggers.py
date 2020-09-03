@@ -2,6 +2,7 @@ import threading
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
 import datetime
 from blqt.backtest.utils import *
 import warnings
@@ -55,27 +56,32 @@ class BasicLogger(Logger):
         self.benchmark_lst.append(self.sys.data_provider.current(self.benchmark_ticker, "close", self.timeframe))
         self.timestamp_lst.append(self.sys.broker.indexer.timestamp)
 
-    def _result(self, pnl_freq="1M"):
+    def make_freq_pnl_str(self, pnl_freq):
+        _, best, worse, mean = \
+            calc_freq_pnl(pv_lst=self.pv_lst, timestamp_lst=self.timestamp_lst, freq=pnl_freq)
+        return f"""best {pnl_freq} p&L(%): {np.round(best, 2)}%
+            worst {pnl_freq} p&L(%): {np.round(worse, 2)}%
+            average {pnl_freq} p&L(%): {np.round(mean, 2)}%
+        """
+
+    def _result(self):
         if self.sys is not None:
             self.trade_hist_rate = self.sys.broker.trade_hist_rate
             self.trade_hist = self.sys.broker.trade_hist
 
         self.pv_lst = np.array(self.pv_lst)
+        self.pv_lst = fillna_arr(self.pv_lst, method="ffill")
 
         self.win_lst = list(filter(lambda x: x > 0, self.trade_hist))
         self.lose_lst = list(filter(lambda x: x < 0, self.trade_hist))
-
-        _, self.best_month, self.worse_month, self.mean_monthly_pnl_perc = \
-            calc_freq_pnl(pv_lst=self.pv_lst, timestamp_lst=self.timestamp_lst, freq=pnl_freq)
 
         self.cagr = calc_cagr(self.pv_lst, self.timestamp_lst)
 
         self.sharpe_ratio, self.sortino_ratio = calc_sharpe_sortino_ratio(self.pv_lst, self.benchmark_lst,
                                                                           self.timestamp_lst)
 
-    def result(self, pnl_freq="1M"):
-        self._result(pnl_freq)
-
+    def result(self):
+        self._result()
         self.trade_hist_rate = np.array(self.trade_hist_rate)
         return (
             f"""
@@ -90,24 +96,77 @@ class BasicLogger(Logger):
             win rate: {np.round(len(self.win_lst) / len(self.trade_hist) * 100, 2)}%
             lose rate: {np.round(len(self.lose_lst) / len(self.trade_hist) * 100, 2)}%\n
 
-            best {pnl_freq} p&L(%): {np.round(self.best_month, 2)}%
-            worst {pnl_freq} p&L(%): {np.round(self.worse_month, 2)}%
-            average {pnl_freq} p&L(%): {np.round(self.mean_monthly_pnl_perc, 2)}%\n
-
             average p&L(%) per trade: {np.round(np.mean(self.trade_hist_rate) * 100, 2)} %
             max p&L(%) per trade: {np.round(np.max(self.trade_hist_rate) * 100, 2)} %
             min p&L(%) per trade: {np.round(np.min(self.trade_hist_rate) * 100, 2)} %
             average profit per trade: {np.round(np.mean(self.trade_hist_rate[np.where(self.trade_hist_rate > 0)])*100, 2)}%
             average loss per trade: {np.round(np.mean(self.trade_hist_rate[np.where(self.trade_hist_rate < 0)])*100, 2)}%\n
+                        
+            {self.make_freq_pnl_str("1M")}
+            
+            {self.make_freq_pnl_str("1D")}
 
             number of trades:{len(self.trade_hist)}"""
         )
-
-    def plot_relative(self):
+    
+    @staticmethod
+    def set_colormap(patches, cm=plt.cm.RdBu_r):
+        for i, p in enumerate(patches):
+            plt.setp(p, 'facecolor', cm(i / 25))
+        
+    def plot_relative(self, rolling_period=60*60*24*365):
         x = [datetime.datetime.fromtimestamp(d) for d in self.timestamp_lst]
-        plt.plot(x, np.array(self.pv_lst) / self.pv_lst[0], label="portfolio")
-        plt.plot(x, np.array(self.benchmark_lst) / self.benchmark_lst[0], label="benchmark")
-        plt.legend()
+
+        fig_main = plt.figure()
+        ax_main = fig_main.add_subplot(111)
+        ax_main.plot(x, np.array(self.pv_lst) / self.pv_lst[0], label="portfolio")
+        ax_main.plot(x, np.array(self.benchmark_lst) / self.benchmark_lst[0], label="benchmark")
+        ax_main.legend()
+        
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot(311)
+        daily_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1D")[0]
+        n, b, p = ax1.hist(daily_pnl*100, label="Daily p&L(%)")
+        self.set_colormap(p)
+        ax1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        ax1.legend()
+
+        bx1 = fig1.add_subplot(312)
+        monthly_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1M")[0]
+        n, b, p = bx1.hist(monthly_pnl*100, label="Monthly p&L(%)")
+        self.set_colormap(p)
+        bx1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        bx1.legend()
+        
+        cx1 = fig1.add_subplot(313)
+        n, b, p = cx1.hist(self.trade_hist_rate*100, label="Trade p&L(%)")
+        self.set_colormap(p)
+        cx1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        cx1.legend()
+
+        fig2 = plt.figure()
+
+        ax2 = fig2.add_subplot(411)
+        timestamp_lst, mdd = get_rolling_mdd(self.pv_lst, self.timestamp_lst, rolling_period)
+        ax2.plot(timestamp_lst, mdd, label="MDD")
+        ax2.legend()
+
+        bx2 = fig2.add_subplot(412)
+        timestamp_lst, cagr = get_rolling_cagr(self.pv_lst, self.timestamp_lst, rolling_period)
+        bx2.plot(timestamp_lst, cagr, label="CAGR")
+        bx2.legend()
+
+        cx2, dx2 = fig2.add_subplot(413), fig2.add_subplot(414)
+        timestamp_lst, sharpe, sortino = get_rolling_sharpe_sortino_ratio(
+            self.pv_lst, self.benchmark_lst, self.timestamp_lst, rolling_period
+        )
+
+        cx2.plot(timestamp_lst, sharpe, label="sharpe ratio")
+        cx2.legend()
+
+        dx2.plot(timestamp_lst, sortino, label="sortino ratio")
+        dx2.legend()
+
         plt.show()
 
 

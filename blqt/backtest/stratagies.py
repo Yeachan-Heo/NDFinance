@@ -239,16 +239,15 @@ class VBFilterAdjusted(Stratagy):
             score = int(momentum > 1) + int(ma_score > 1) + int(rsi > 50) + 1
 
             if (((self.curr_start + self.k * self.range) <= self.curr_high)):
-                self.broker.order_target_weight_pv(self.ticker, score/4 * self.leverage, price=high)
-                #print(f"open position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
+                self.broker.order_target_weight_pv(self.ticker, score/4 * self.leverage)
+                ##(f"open position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
         else:
             dt_pos = datetime.datetime.fromtimestamp(self.broker.positions[self.ticker].log[-1].timestamp)
             day_pos = dt_pos.day
             hr = dt.hour
             if (day_pos != day) & (hr >= 9):
-                self.broker.close_position(self.ticker, 
-                                           price=self.broker.data_provider.current(self.ticker, "open", timeframe=TimeFrames.Day))
-                #print(f"close position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
+                self.broker.close_position(self.ticker)
+                ##(f"close position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
 
 
 class InvTrendShortDivergence(Stratagy):
@@ -320,19 +319,126 @@ class VBFilterAdjustedLongShort(Stratagy):
                 score = int(momentum > 1) + int(ma_score > 1) + int(rsi > 50) + 1
                 if score > 3:
                     self.broker.order_target_weight_pv(
-                        self.ticker, score/4 * self.leverage, price=high)
-                #print(f"open position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
+                        self.ticker, score/4 * self.leverage)
+                ##(f"open position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
             elif (((self.curr_start - self.k * self.range) >= self.curr_low)):
                 score = int(momentum < 1) + int(ma_score < 1) + int(rsi < 50) + 1
                 if score > 3:
                     self.broker.order_target_weight_pv(
-                        self.ticker, -score/4 * self.leverage, price=low)
+                        self.ticker, -score/4 * self.leverage)
         else:
             dt_pos = datetime.datetime.fromtimestamp(self.broker.positions[self.ticker].log[-1].timestamp)
             day_pos = dt_pos.day
             hr = dt.hour
             if (day_pos != day) & (hr >= 9):
-                self.broker.close_position(self.ticker,
-                                           price=self.broker.data_provider.current(self.ticker, "open", timeframe=TimeFrames.Day))
-                #print(f"close position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
+                self.broker.close_position(self.ticker)
+                ##(f"close position at {datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)}")
+
+
+
+import ray
+import ray.tune as tune
+import ray.rllib.agents.sac as sac
+from pprint import pprint
+
+class VBAgentStratagy(Stratagy):
+    def __init__(self, agent):
+        super(VBAgentStratagy, self).__init__()
+        self.agent = agent
+        self.curr_low, self.curr_high = np.inf, 0
+        self.curr_start = 0
+        self.range = np.nan
+
+    def set_system(self, system):
+        super(VBAgentStratagy, self).set_system(system)
+        self.prev_day = \
+            datetime.datetime.fromtimestamp(self.broker.indexer.timestamp).day
+        self.update_params()
+
+    def update_params(self):
+        self.k, self.bet = \
+            self.agent.get_policy().compute_single_action(self._get_observation())[-1]["action_dist_inputs"][:2]
+        self.k = np.clip(self.k, 0, 1.2)
+        self.bet = np.clip(self.bet, 0, 1)
+        #(self.k, self.bet)
+
+    def _get_observation(self):
+        ma20 = self.data_provider.current("Ticker", "MA20", timeframe=TimeFrames.Day)
+        ma5 = self.data_provider.current("Ticker", "MA5", timeframe=TimeFrames.Day)
+        rsi = self.data_provider.current("Ticker", "RSI", timeframe=TimeFrames.Day)
+        rocr = self.data_provider.current("Ticker", "ROCR", timeframe=TimeFrames.Day)
+        bw = self.data_provider.current("Ticker", "BAND_WIDTH", timeframe=TimeFrames.Day)
+        b = self.data_provider.current("Ticker", "%b", timeframe=TimeFrames.Day)
+        ma_div = ma5 / ma20
+        rsi /= 100
+        return np.array([ma_div, rsi, rocr, bw, b])
+
+    def logic(self):
+        dt = datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)
+        day = dt.day
+
+        if day != self.prev_day:
+            self.prev_day = day
+            self.range = self.data_provider.current("Ticker", "RANGE", timeframe=TimeFrames.Day)
+            self.curr_start = self.data_provider.current("Ticker", "open", timeframe=TimeFrames.Minute)
+            self.curr_low, self.curr_high = np.inf, 0
+            self.update_params()
+
+        high, low = self.data_provider.current("Ticker", "high", timeframe=TimeFrames.Minute), \
+                    self.data_provider.current("Ticker", "low", timeframe=TimeFrames.Minute)
+
+        if self.curr_high < high : self.curr_high = high
+        if self.curr_low > low: self.curr_low = low
+
+        if not self.broker.positions:
+            k_range = self.k * self.range
+            high_breakout = self.curr_start + k_range
+            low_breakout = self.curr_start - k_range
+
+            if (high_breakout <= self.curr_high):
+                self.broker.order_target_weight_pv("Ticker", self.bet)
+            elif (low_breakout >= self.curr_low):
+                self.broker.order_target_weight_pv("Ticker", -self.bet)
+
+        else:
+            dt_pos = datetime.datetime.fromtimestamp(self.broker.positions["Ticker"].log[-1].timestamp)
+            day_pos = dt_pos.day
+            hr = dt.hour
+            if (day_pos != day) & (hr >= 9):
+                self.broker.close_position(
+                    "Ticker",price=self.broker.data_provider.current("Ticker", "open", timeframe=TimeFrames.Minute))
+
+
+class VBAgentStratagyV2(VBAgentStratagy):
+    def __init__(self, *args, **kwargs):
+        super(VBAgentStratagyV2, self).__init__(*args, **kwargs)
+
+    def update_params(self):
+        self.k, self.bet = \
+            self.agent.get_policy().compute_single_action(self._get_observation())[-1]["action_dist_inputs"][:2]
+        self.k = np.clip(self.k, 0.5, 1.2)
+        self.bet = np.clip(self.bet, 0, 1)
+
+
+class TimeCutStratagyBase(Stratagy):
+    def __init__(self, ticker="Ticker", timecut=TimeFrames.Hour):
+        super(TimeCutStratagyBase, self).__init__()
+        self.side, self.weight = 0, 0
+        self.ticker = ticker
+        self.timecut = timecut
+
+    def update_side_and_weight(self):
+        raise NotImplementedError
+
+    def logic(self):
+        self.update_side_and_weight()
+
+        if self.weight == 0:
+            return
+
+        if self.broker.positions:
+            if (self.broker.indexer.timestamp - self.broker.positions["Ticker"]) >= self.timecut:
+                self.broker.close_position(self.ticker)
+        else:
+            self.broker.order_target_weight_pv(self.ticker, weight=self.weight * self.side)
 

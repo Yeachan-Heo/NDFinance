@@ -24,20 +24,12 @@ future==0.18.2
 google==3.0.0
 grpcio==1.30.0
 gym==0.17.2
-h5py @ file:///opt/concourse/worker/volumes/live/98bee3fd-2687-4017-5421-d742d1f18c35/volume/h5py_1593454156895/work
-idna==2.10
-importlib-metadata @ file:///opt/concourse/worker/volumes/live/84197498-cbc0-4436-7ce0-03c4490b7a28/volume/importlib-metadata_1593446431408/work
-inflection==0.5.0
-ipykernel @ file:///opt/concourse/worker/volumes/live/73e8766c-12c3-4f76-62a6-3dea9a7da5b7/volume/ipykernel_1596206701501/work/dist/ipykernel-5.3.4-py3-none-any.whl
-ipython @ file:///opt/concourse/worker/volumes/live/7ea70a71-5624-4799-50b3-3b90e07922f3/volume/ipython_1593447385860/work
 ipython-genutils==0.2.0
 ipywidgets==7.5.1
-jedi @ file:///opt/concourse/worker/volumes/live/114a62c0-dd60-4a40-6382-85abb31b5f6e/volume/jedi_1592841953086/work
 Jinja2==2.11.2
 joblib==0.16.0
 jsonschema==3.2.0
 jupyter==1.0.0
-jupyter-client @ file:///tmp/build/80754af9/jupyter_client_1594826976318/work
 jupyter-console==6.1.0
 jupyter-core==4.6.3
 kiwisolver==1.2.0
@@ -47,9 +39,6 @@ lxml==4.5.2
 MarkupSafe==1.1.1
 matplotlib==3.3.0
 mistune==0.8.4
-mkl-fft==1.1.0
-mkl-random==1.1.1
-mkl-service==2.3.0
 modin==0.7.4
 more-itertools==8.4.0
 msgpack==1.0.0
@@ -61,7 +50,6 @@ notebook==6.0.3
 numba==0.50.1
 numpy==1.19.1
 packaging==20.4
-pandas @ file:///opt/concourse/worker/volumes/live/38d1301c-8fa9-4d2f-662e-34dddf33b183/volume/pandas_1592841668171/work
 pandas-datareader==0.9.0
 pandocfilters==1.4.2
 parso==0.7.0
@@ -83,7 +71,6 @@ python-dateutil==2.8.1
 pytz==2020.1
 PyYAML==5.3.1
 pyzmq==19.0.1
-qtconsole @ file:///tmp/build/80754af9/qtconsole_1592848611704/work
 QtPy==1.9.0
 Quandl==3.5.2
 ray==0.8.6
@@ -104,7 +91,6 @@ tornado==6.0.4
 tqdm==4.48.2
 traitlets==4.3.3
 urllib3==1.25.10
-wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work
 webencodings==0.5.1
 webull==0.1.0
 widgetsnbextension==3.5.1

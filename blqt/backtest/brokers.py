@@ -21,6 +21,7 @@ class BackTestBroker(Broker):
         self.data_provider: BacktestDataProvider = data_provider
         self.trade_hist = []
         self.trade_hist_rate = []
+        self.trade_hist_rate_weighted = []
 
     def initialize(self, margin):
         self.margin = margin
@@ -47,29 +48,36 @@ class BackTestBroker(Broker):
         [item.update_weight(self.pv) for item in self.positions.values()]
 
     def order_limit(self, ticker, amount, price):
-        if amount == 0:
-            return
+        ret = 0
+
+        if (amount == 0) or (amount == np.nan):
+            return ret
+
         price = price * (1 + self.tickers[ticker].slippage * np.sign(amount))
+
         if ticker in self.positions.keys():
             realized = self.positions[ticker].add(
                 amount=amount, avg_price=price, timestamp=self.indexer.timestamp)
             self.deposit(realized)
 
             if np.abs(realized) > 0:
-                self.trade_hist_rate.append(
-                    self.positions[ticker].unrealized_pnl_rate*self.positions[ticker].weight
-                )
+                ret = self.positions[ticker].unrealized_pnl_rate*self.positions[ticker].weight
+                self.trade_hist_rate_weighted.append(ret)
+                self.trade_hist_rate.append(self.positions[ticker].unrealized_pnl_rate)
                 self.trade_hist.append(realized)
 
-            if self.positions[ticker].amount == 0:
+            if (self.positions[ticker].amount == 0) or (self.positions[ticker].amount == np.nan):
                 del self.positions[ticker]
                 self.calc_pv()
         else:
             self.positions[ticker] = Position(self.tickers[ticker], amount, price, self.indexer.timestamp)
 
+        return ret
+
+
     def order_market(self, ticker, amount):
         price = self.data_provider.current(ticker, label="close")
-        self.order_limit(ticker, amount, price=price)
+        return self.order_limit(ticker, amount, price=price)
 
     def order_target_weight(self, value, ticker, weight, price=None):
 
@@ -84,19 +92,18 @@ class BackTestBroker(Broker):
         ) // min_amount * min_amount
 
         amount = target_amount - self.positions[ticker].amount if ticker in self.positions.keys() else target_amount
-        self.order_limit(ticker, amount, price)
+        return self.order_limit(ticker, amount, price)
 
     def order_target_weight_pv(self, ticker, weight, price=None):
-        self.order_target_weight(self.pv, ticker, weight, price)
+        return self.order_target_weight(self.pv, ticker, weight, price)
 
     def order_target_weight_margin(self, ticker, weight, price=None):
-        self.order_target_weight(self.orderable_margin, ticker, weight, price)
+        return self.order_target_weight(self.orderable_margin, ticker, weight, price)
 
     def close_position(self, ticker, price=None):
         if price is None:
-            self.order_market(ticker, -self.positions[ticker].amount)
-            return
-        self.order_limit(ticker, -self.positions[ticker].amount, price)
+            return self.order_market(ticker, -self.positions[ticker].amount)
+        return self.order_limit(ticker, -self.positions[ticker].amount, price)
 
 
 from webull import paper_webull, webull

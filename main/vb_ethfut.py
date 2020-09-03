@@ -20,6 +20,7 @@ def first_test(data_path_1d, data_path_1min):
     data.add_array("MA5", ta.SMA(df["close"], timeperiod=2))
     data.add_array("RSI", ta.RSI(df["close"], timeperiod=7))
     data.add_array("ROCR", ta.ROCR(df["close"], timeperiod=7))
+    data.add_array("AROONOSC", ta.AROON(df["high"], df["low"], timeperiod=8))
     data.add_array("RANGE", df["high"].values - df["low"].values)
 
     df_1min = pd.read_csv(data_path_1min)
@@ -44,7 +45,7 @@ def first_test(data_path_1d, data_path_1min):
 
     broker.add_ticker(NQ)
 
-    system = DistributedBacktestSystem(n_cores=50)
+    system = DistributedBacktestSystem(n_cores=10)
 
     stratagy = VBFilterAdjustedLongShort("ETHUSD", k=0.6, leverage=1)
 
@@ -61,4 +62,4 @@ def first_test(data_path_1d, data_path_1min):
 
 
 if __name__ == '__main__':
-    first_test("../data/ETHUSD_20180802-20200824_1day.csv", "../data/ETHUSD_20180802-20200824_1min.csv")
+    first_test("../data/bitmex/ETHUSD_1D.csv", "../data/bitmex/ETHUSD_10T.csv")
