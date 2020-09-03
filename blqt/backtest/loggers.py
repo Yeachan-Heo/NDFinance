@@ -128,20 +128,20 @@ class BasicLogger(Logger):
         daily_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1D")[0]
         n, b, p = ax1.hist(daily_pnl*100, label="Daily p&L(%)")
         self.set_colormap(p)
-        ax1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        ax1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         ax1.legend()
 
         bx1 = fig1.add_subplot(312)
         monthly_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1M")[0]
         n, b, p = bx1.hist(monthly_pnl*100, label="Monthly p&L(%)")
         self.set_colormap(p)
-        bx1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        bx1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         bx1.legend()
         
         cx1 = fig1.add_subplot(313)
         n, b, p = cx1.hist(self.trade_hist_rate*100, label="Trade p&L(%)")
         self.set_colormap(p)
-        cx1.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+        cx1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         cx1.legend()
 
         fig2 = plt.figure()

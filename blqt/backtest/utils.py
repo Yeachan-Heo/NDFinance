@@ -2,7 +2,16 @@ import numpy as np
 import pandas as pd
 import datetime
 import time
-import numba
+import multiprocessing
+import psutil
+
+
+def split_list(alist, wanted_parts=1):
+    length = len(alist)
+    return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts]
+             for i in range(wanted_parts) ]
+
+
 def to_timestamp(timestamp):
     return [time.mktime(datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S").timetuple()) for t in
      timestamp.tolist()]
@@ -25,6 +34,7 @@ def rolling_window(observations, n, func:lambda x: x):
         strip = func(observations[i:i + n])
         ret.append(strip)
     return np.array(ret)
+
 
 def get_rolling_window_size(timestamp_lst, period):
     return len(timestamp_lst[np.where(timestamp_lst <= timestamp_lst[0] + period)[0]])
