@@ -50,4 +50,4 @@ def crawl(path, name, start_date="20130101"):
 
 
 if __name__ == '__main__':
-    crawl(path="~/Data/bitmex/trade/raw/", name="trade", start_date="20000101")
+    crawl(path="~/Data/bitmex/trade/raw/", name="trade", start_dwate="20000101")

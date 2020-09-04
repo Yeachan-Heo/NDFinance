@@ -211,6 +211,7 @@ class DistributedBacktestSystem():
         pv_lst = []
         trade_hist = []
         trade_hist_rate = []
+        trade_hist_rate_weighted = []
         timestamp_lst = []
         benchmark_lst = []
 
@@ -223,6 +224,7 @@ class DistributedBacktestSystem():
             change_perc.extend(change_perc_per_timeframe)
             trade_hist.extend(logger.trade_hist)
             trade_hist_rate.extend(logger.trade_hist_rate)
+            trade_hist_rate_weighted.extend(logger.trade_hist_rate_weighted)
             timestamp_lst.extend(logger.timestamp_lst)
             benchmark_lst.extend(logger.benchmark_lst)
 
@@ -247,6 +249,7 @@ class DistributedBacktestSystem():
         new_logger.timestamp_lst = df["timestamp"].values
         new_logger.trade_hist = trade_hist
         new_logger.trade_hist_rate = trade_hist_rate
+        new_logger.trade_hist_rate_weighted = trade_hist_rate_weighted
 
         self.new_logger = new_logger
 

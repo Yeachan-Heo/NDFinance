@@ -40,7 +40,7 @@ def first_test(data_path_1d, data_path_1min):
     broker = BackTestBroker(data_provider, indexer)
     broker.initialize(margin=10000000)
 
-    NQ = FinancialProduct("ETHUSD", 1, 1, 0.0004, 1, 1, 0.000001)
+    NQ = FinancialProduct("ETHUSD", 1, 1, 0, 1, 1, 0.000001)
 
     broker.add_ticker(NQ)
 
@@ -61,4 +61,4 @@ def first_test(data_path_1d, data_path_1min):
 
 
 if __name__ == '__main__':
-    first_test("../data/bitmex/ETHUSD_1D.csv", "../data/bitmex/ETHUSD_5T.csv")
+    first_test("../data/bitmex/ETHUSD_1D.csv", "../data/bitmex/ETHUSD_15T.csv")

@@ -68,6 +68,7 @@ class BasicLogger(Logger):
         if self.sys is not None:
             self.trade_hist_rate = self.sys.broker.trade_hist_rate
             self.trade_hist = self.sys.broker.trade_hist
+            self.trade_hist_rate_weighted = self.sys.broker.trade_hist_rate_weighted
 
         self.pv_lst = np.array(self.pv_lst)
         self.pv_lst = fillna_arr(self.pv_lst, method="ffill")
@@ -83,6 +84,7 @@ class BasicLogger(Logger):
     def result(self):
         self._result()
         self.trade_hist_rate = np.array(self.trade_hist_rate)
+        self.trade_hist_rate_weighted = np.array(self.trade_hist_rate_weighted)
         return (
             f"""
             overall p&L(%): {np.round(self.pv_lst[-1] / self.pv_lst[0] * 100 - 100, 2)}%
@@ -99,6 +101,11 @@ class BasicLogger(Logger):
             average p&L(%) per trade: {np.round(np.mean(self.trade_hist_rate) * 100, 2)} %
             max p&L(%) per trade: {np.round(np.max(self.trade_hist_rate) * 100, 2)} %
             min p&L(%) per trade: {np.round(np.min(self.trade_hist_rate) * 100, 2)} %
+
+            average p&L(%) per trade(weighted): {np.round(np.mean(self.trade_hist_rate_weighted) * 100, 2)} %
+            max p&L(%) per trade(weighted): {np.round(np.max(self.trade_hist_rate_weighted) * 100, 2)} %
+            min p&L(%) per trade(weighted): {np.round(np.min(self.trade_hist_rate_weighted) * 100, 2)} %
+
             average profit per trade: {np.round(np.mean(self.trade_hist_rate[np.where(self.trade_hist_rate > 0)])*100, 2)}%
             average loss per trade: {np.round(np.mean(self.trade_hist_rate[np.where(self.trade_hist_rate < 0)])*100, 2)}%\n
                         
@@ -124,22 +131,28 @@ class BasicLogger(Logger):
         ax_main.legend()
         
         fig1 = plt.figure()
-        ax1 = fig1.add_subplot(311)
+        ax1 = fig1.add_subplot(411)
         daily_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1D")[0]
         n, b, p = ax1.hist(daily_pnl*100, label="Daily p&L(%)")
         self.set_colormap(p)
         ax1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         ax1.legend()
 
-        bx1 = fig1.add_subplot(312)
+        bx1 = fig1.add_subplot(412)
         monthly_pnl = calc_freq_pnl(self.pv_lst, self.timestamp_lst, freq="1M")[0]
         n, b, p = bx1.hist(monthly_pnl*100, label="Monthly p&L(%)")
         self.set_colormap(p)
         bx1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         bx1.legend()
         
-        cx1 = fig1.add_subplot(313)
+        cx1 = fig1.add_subplot(413)
         n, b, p = cx1.hist(self.trade_hist_rate*100, label="Trade p&L(%)")
+        self.set_colormap(p)
+        cx1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
+        cx1.legend()
+
+        cx1 = fig1.add_subplot(414)
+        n, b, p = cx1.hist(self.trade_hist_rate_weighted*100, label="Trade p&L Weighted(%)")
         self.set_colormap(p)
         cx1.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
         cx1.legend()
