@@ -1,5 +1,8 @@
-from blqt.rl_envs.vb_env import *
+from blqt.rl_envs.vb_env import VBEnv_V3
 
+from ray import tune
+from ray.rllib.agents import sac
+import numpy as np
 
 if __name__ == '__main__':
     config = sac.DEFAULT_CONFIG.copy()
@@ -10,11 +13,13 @@ if __name__ == '__main__':
         "data_path_1day": "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
         "from_timeindex" : -np.inf,
         "to_timeindex" : np.inf,
-        "k" : 0.6,
+        "k" : 0.6
     }
 
     config["framework"] = "torch"
     config["num_workers"] = 11
+    config["num_gpus"] = 1
+    config["seed"] = 7777777
 
     tune.run(
         sac.SACTrainer,

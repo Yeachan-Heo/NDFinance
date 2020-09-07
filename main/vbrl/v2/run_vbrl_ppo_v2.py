@@ -98,6 +98,6 @@ if __name__ == '__main__':
     for i in range(4, 5):
         n = i * 100
         first_test(
-        "/tmp/pycharm_project_716/data/bitmex/ETHUSD_1D.csv",
-        "/tmp/pycharm_project_716/data/bitmex/ETHUSD_1H.csv",
-        f"/tmp/pycharm_project_716/main/vbrl/v2/log/PPO/PPO_VBEnv_V2_0_2020-08-30_18-36-17m62b6z_y/checkpoint_{n}/checkpoint-{n}")
+        "/tmp/pycharm_project_22/data/bitmex/ETHUSD_1D.csv",
+        "/tmp/pycharm_project_22/data/bitmex/ETHUSD_1H.csv",
+        f"/tmp/pycharm_project_22/main/vbrl/v2/log/PPO/PPO_VBEnv_V2_0_2020-08-30_18-36-17m62b6z_y/checkpoint_{n}/checkpoint-{n}")

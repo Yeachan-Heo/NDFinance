@@ -39,7 +39,7 @@ class BackTestBroker(Broker):
         for key, item in self.positions.items():
             item.update_value(self.data_provider.current(key, "close") * (1 - item.product.slippage * np.sign(item.amount)))
             self.pv += item.unrealized_pnl
-        pos_values = np.sum([p.position_value for p in self.positions.values()])
+        pos_values = np.sum([np.abs(p.position_value) for p in self.positions.values()])
 
         self.orderable_margin = self.pv - pos_values
         self.leverage = pos_values / self.pv
@@ -98,6 +98,7 @@ class BackTestBroker(Broker):
         return self.order_target_weight(self.pv, ticker, weight, price)
 
     def order_target_weight_margin(self, ticker, weight, price=None):
+        self.calc_pv()
         return self.order_target_weight(self.orderable_margin, ticker, weight, price)
 
     def close_position(self, ticker, price=None):
@@ -164,5 +165,11 @@ class WebullBroker(Broker):
     def order_target_weight_margin(self, ticker, weight, price):
         self.get_pv()
         self.order_target_weight(self._cash, ticker, weight, price)
+
+import ccxt
+
+class CCXTBroker(Broker):
+    def __init__(self):
+        super(CCXTBroker, self).__init__()
 
 

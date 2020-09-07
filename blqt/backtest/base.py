@@ -89,6 +89,7 @@ class Position:
         self.weight = self.position_value / pv
 
 
+import os
 
 class System:
     def __init__(self, use_tqdm=False, name="backtest_result"):
@@ -117,14 +118,22 @@ class System:
         raise NotImplementedError
 
     def result(self):
-        result = self.logger.result()
-        print(result)
-
-        with open(self.name + ".txt", "w") as f:
-            f.write(result)
+        self.result_str = self.logger.result()
+        print(self.result_str)
 
     def plot(self):
-        self.logger.plot_relative()
+        self.figs = self.logger.plot_relative()
+
+    def save(self):
+        if not os.path.exists(self.name):
+            os.makedirs(self.name)
+
+        with open(self.name + "/result.txt", "w") as f:
+            f.write(self.result_str)
+
+        for i, fig in enumerate(self.figs):
+            fig.savefig(self.name + f"/fig_{i}.png")
+
 
 
 class BacktestSystem(System):
@@ -257,14 +266,22 @@ class DistributedBacktestSystem():
         self.run_distributed()
 
     def result(self):
-        result = self.new_logger.result()
-        print(result)
-
-        with open(self.name + ".txt", "w") as f:
-            f.write(result)
+        self.result_str = self.new_logger.result()
+        print(self.result_str)
 
     def plot(self):
-        self.new_logger.plot_relative()
+        self.figs = self.new_logger.plot_relative()
+
+    def save(self):
+        print(f"saving at: {self.name}")
+        if not os.path.exists(self.name):
+            os.makedirs(self.name)
+
+        with open(self.name + "/result.txt", "w") as f:
+            f.write(self.result_str)
+
+        for i, fig in enumerate(self.figs):
+            fig.savefig(self.name + f"/fig_{i}.png")
 
 
 class TimeFrames:

@@ -61,4 +61,4 @@ def first_test(data_path_1d, data_path_1min):
 
 
 if __name__ == '__main__':
-    first_test("../data/bitmex/ETHUSD_1D.csv", "../data/bitmex/ETHUSD_15T.csv")
+    first_test("../../data/bitmex/XBTUSD_1D.csv", "../data/bitmex/XBTUSD_15T.csv")

@@ -5,6 +5,22 @@ from dateutils import relativedelta
 from blqt.backtest.historical_data import TimeIndexedData
 import os
 
+def resample_tick(args):
+    data_dir, fname, period, symbol = args
+    df = pd.read_csv(data_dir + fname)
+
+    df = df.loc[df["symbol"] == symbol]
+
+    if df.empty:
+        return df
+
+    df.index = pd.to_datetime(df["timestamp"].str.replace("D", " "))
+
+    bar = df["price"].resample(period).ohlc().fillna(method="ffill")
+    bar["volume"] = df["size"].resample(period).sum().fillna(0)
+
+    return bar
+
 def add_close_time(data_path, date_column="timestamp", **kwargs):
     df = pd.read_csv(data_path)
     ts = [datetime.datetime.strptime(x, "%Y-%m-%d") for x in df[date_column].values]
@@ -58,3 +74,9 @@ def make_bitmex_data(path):
 if __name__ == '__main__':
     resample_ohlc_dir("../../data/bitmex/", "1T", "5T")
     resample_ohlc_dir("../../data/bitmex/", "1T", "10T")
+    resample_ohlc_dir("../../data/bitmex/", "1T", "15T")
+    resample_ohlc_dir("../../data/bitmex/", "1T", "30T")
+    resample_ohlc_dir("../../data/bitmex/", "1T", "1H")
+    resample_ohlc_dir("../../data/bitmex/", "1T", "1D")
+
+    add_close_time_dir("../../data/bitmex/", hours=23, minutes=59, seconds=59)

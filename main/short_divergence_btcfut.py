@@ -50,4 +50,4 @@ def first_test(data_path):
 
 
 if __name__ == '__main__':
-    first_test("../data/XBTUSD_20150925-20200806_1min.csv")
+    first_test("../data/bitmex/XBTUSD_1T.csv")

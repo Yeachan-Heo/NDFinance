@@ -57,18 +57,33 @@ def get_rolling_cagr(pv_lst, timestamp_lst, period):
 
 
 def get_rolling_sharpe_sortino_ratio(pv_lst, benchmark_lst, timestamp_lst, period):
+    index = pd.DatetimeIndex([
+        datetime.datetime.fromtimestamp(d) for d in timestamp_lst
+    ])
+
+    pv_df = pd.DataFrame({"pv": pv_lst}, index=index)
+    bench_df = pd.DataFrame({"benchmark": benchmark_lst}, index=index)
+
+    pv_df = pv_df["pv"].resample("1M").ohlc().dropna()
+    bench_df = bench_df["benchmark"].resample("1M").ohlc().dropna()
+
+    pv_ret = np.log(pv_df["close"].values / pv_df["open"].values)
+    bench_ret = np.log(bench_df["close"].values / bench_df["open"].values)
+
+    timestamp_lst = np.array([x.timestamp() for x in pv_df.index]).flatten()
+    
     window_size = get_rolling_window_size(timestamp_lst, period)
     timestamp_lst = rolling_window(timestamp_lst, window_size, lambda x: x[-1])
+    
 
     sharpe, sortino = [], []
 
-    scaler = (60*60*24*365 // (timestamp_lst[1] - timestamp_lst[0])) ** 0.5
+    for i, (_, _) in enumerate(zip(bench_ret[window_size - 1:], pv_ret[window_size - 1:])):
 
-    for i, (bench, port) in enumerate(zip(benchmark_lst[window_size - 1:], pv_lst[window_size - 1:])):
-        be, pv = benchmark_lst[i:i+window_size], pv_lst[i:i+window_size]
+        be, pv = bench_ret[i:i+window_size], pv_ret[i:i+window_size]
         sharpe_ratio, sortino_ratio = calc_sharpe_sortino_ratio_v2(pv, be)
-        sharpe.append(sharpe_ratio*scaler)
-        sortino.append(sortino_ratio*scaler)
+        sortino.append(sortino_ratio)
+        sharpe.append(sharpe_ratio)
 
     return to_datetime(timestamp_lst), np.array(sharpe), np.array(sortino)
 
@@ -96,7 +111,7 @@ def calc_freq_pnl(pv_lst, timestamp_lst, freq="1M"):
     min_pnl_perc = np.min(pnl_perc)*100
     mean_pnl_perc = np.mean(pnl_perc)*100
 
-    return pnl_perc, max_pnl_perc, min_pnl_perc, mean_pnl_perc
+    return df.index.values, pnl_perc, max_pnl_perc, min_pnl_perc, mean_pnl_perc
 
 def calc_cagr(pv_lst, timestamp_lst):
     pnl_perc_ld = calc_freq_pnl(pv_lst, timestamp_lst, freq="1D")[0]
@@ -135,10 +150,7 @@ def calc_sharpe_sortino_ratio(pv_lst, benchmark_lst, timestamp_lst):
 
 
 
-def calc_sharpe_sortino_ratio_v2(pv_lst, benchmark_lst):
-    pv_ret = np.log(pv_lst[1:] / pv_lst[:-1])
-    bench_ret = np.log(benchmark_lst[1:]/benchmark_lst[:-1])
-
+def calc_sharpe_sortino_ratio_v2(pv_ret, bench_ret):
     sharpe_ratio = (np.mean(pv_ret) - np.mean(bench_ret)) / np.std(pv_ret)
     sortino_ratio = (np.mean(pv_ret) - np.mean(bench_ret)) / \
                     np.std(pv_ret[np.where(np.exp(pv_ret) < 1)])

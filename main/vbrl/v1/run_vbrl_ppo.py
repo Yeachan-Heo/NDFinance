@@ -59,8 +59,8 @@ def first_test(data_path_1day, data_path_1min, restore_path):
     config["env"] = VBEnv
 
     config["env_config"] = {
-        "data_path_1min" : "/tmp/pycharm_project_716/data/bitmex/BCHUSD_1H.csv",
-        "data_path_1day": "/tmp/pycharm_project_716/data/bitmex/BCHUSD_1D.csv",
+        "data_path_1min" : "/tmp/pycharm_project_22/data/bitmex/BCHUSD_1H.csv",
+        "data_path_1day": "/tmp/pycharm_project_22/data/bitmex/BCHUSD_1D.csv",
         "from_timeindex" : -np.inf,
         "to_timeindex" : np.inf
     }
@@ -96,6 +96,6 @@ def first_test(data_path_1day, data_path_1min, restore_path):
 if __name__ == '__main__':
     n = 100
     first_test(
-        "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1D.csv",
-        "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1H.csv",
-        f"/tmp/pycharm_project_716/main/vbrl/v1/VB_Env/PPO/PPO_VBEnv_0_2020-08-31_00-41-243ydmuwvn/checkpoint_{n}/checkpoint-{n}")
+        "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
+        "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
+        f"/tmp/pycharm_project_22/main/vbrl/v1/VB_Env/PPO/PPO_VBEnv_0_2020-08-31_00-41-243ydmuwvn/checkpoint_{n}/checkpoint-{n}")

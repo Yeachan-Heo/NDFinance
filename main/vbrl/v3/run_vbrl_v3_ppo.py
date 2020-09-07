@@ -22,9 +22,7 @@ def make_data(path):
     return data
 
 
-def first_test(data_path_1day, data_path_1min, restore_path):
-
-
+def first_test(data_path_1day, data_path_1min, restore_path, name="bt_result"):
     initial_margin = 10000000
 
     data_1min = make_data(data_path_1min)
@@ -40,8 +38,8 @@ def first_test(data_path_1day, data_path_1min, restore_path):
     data_1day.add_array("RANGE", data_1day["high"] - data_1day["low"])
 
     indexer = TimeIndexer(data_1min["timestamp"],
-                               from_timestamp=np.clip(data_1day["timestamp"][20], -np.inf, np.inf),
-                               to_timestamp=np.clip(data_1day["timestamp"][-30], -np.inf, np.inf))
+                          from_timestamp=np.clip(data_1day["timestamp"][20], -np.inf, np.inf),
+                          to_timestamp=np.clip(data_1day["timestamp"][-2], -np.inf, np.inf))
 
     data_provider = BacktestDataProvider()
     data_provider.register_time_indexer(indexer)
@@ -55,29 +53,31 @@ def first_test(data_path_1day, data_path_1min, restore_path):
     Ticker = FinancialProduct("Ticker", 0.25, 4, 0.0003, 0.1, 0.9, 0.000001)
     broker.add_ticker(Ticker)
 
-    config = sac.DEFAULT_CONFIG.copy()
+    config = ppo.DEFAULT_CONFIG.copy()
     config["env"] = VBEnv
 
     config["env_config"] = {
-        "data_path_1min" : "/tmp/pycharm_project_22/data/ETHUSD_20180802-20200824_1hour.csv",
-        "data_path_1day": "/tmp/pycharm_project_22/data/ETHUSD_20180802-20200824_1day.csv",
-        "from_timeindex" : -np.inf,
-        "to_timeindex" : np.inf
+        "data_path_1min": data_path_1min,
+        "data_path_1day": data_path_1day,
+        "from_timeindex": -np.inf,
+        "to_timeindex": np.inf
     }
 
     config["framework"] = "torch"
-    config["num_workers"] = 2
+    config["num_workers"] = 1
+    config["num_gpus"] = 1
 
+    ray.shutdown()
     ray.init()
 
-    agent = sac.SACTrainer(config=config, env=VBEnv)
+    agent = ppo.PPOTrainer(config=config, env=VBEnv)
     agent.restore(restore_path)
 
-    stratagy = VBAgentStratagyV2(agent)
+    stratagy = VBAgentStratagyV3(agent, k=0.6)
 
     logger = BasicLogger("Ticker")
 
-    system = BacktestSystem()
+    system = BacktestSystem(name=name)
     system.set_broker(broker)
     system.set_data_provider(data_provider)
     system.set_logger(logger)
@@ -87,15 +87,15 @@ def first_test(data_path_1day, data_path_1min, restore_path):
     system.result()
     broker.calc_pv()
     system.plot()
-
-
-
-
+    system.save()
 
 
 if __name__ == '__main__':
-    n = 5000
-    first_test(
-        "../../../data/XBTUSD_20150925-20200806_1day.csv",
-        "../data/XBTUSD_20150925-20200806_1hour.csv",
-        f"/tmp/pycharm_project_22/blqt/rl_envs/VB_Env/SAC/SAC_VBEnv_0_2020-08-30_00-48-15q7qkvj_2/checkpoint_{n}/checkpoint-{n}")
+    #for i in range(1, 2):
+        i = 5
+        n = i * 100
+        first_test(
+            "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
+            "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
+            f"/tmp/pycharm_project_22/main/vbrl/v3/log/xbt_partial/PPO/PPO_VBEnv_V3_0_2020-09-07_10-12-37qv3rf7b8/checkpoint_{n}/checkpoint-{n}",
+        )

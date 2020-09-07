@@ -87,7 +87,7 @@ class TimeCutEnv(gym.Env):
             return 0
 
         if self.broker.positions:
-            if (self.broker.indexer.timestamp - self.broker.positions["Ticker"]) >= self.timecut:
+            if (self.broker.indexer.timestamp - self.broker.positions["Ticker"].log[-1].timestamp) >= self.timecut:
                 return self.broker.close_position("Ticker")
         else:
             return self.broker.order_target_weight_pv("Ticker", weight=self.weight * self.side)
@@ -109,7 +109,7 @@ class TimeCutEnv(gym.Env):
 
 if __name__ == '__main__':
     env_cfg = {
-        "data_path" : "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1H.csv"
+        "data_path" : "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv"
     }
     env = TimeCutEnv(env_cfg)
     env.reset()

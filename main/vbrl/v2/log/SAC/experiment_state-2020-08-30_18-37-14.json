@@ -43,8 +43,8 @@
         "soft_horizon": false,
         "no_done_at_end": false,
         "env_config": {
-          "data_path_1min": "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1H.csv",
-          "data_path_1day": "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1D.csv",
+          "data_path_1min": "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
+          "data_path_1day": "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
           "from_timeindex": -Infinity,
           "to_timeindex": Infinity
         },
@@ -182,7 +182,7 @@
         "_use_beta_distribution": false,
         "grad_norm_clipping": -1
       },
-      "local_dir": "/tmp/pycharm_project_716/main/vbrl/v2/log/SAC",
+      "local_dir": "/tmp/pycharm_project_22/main/vbrl/v2/log/SAC",
       "evaluated_params": {},
       "experiment_tag": "0",
       "location": {
@@ -515,8 +515,8 @@
           "soft_horizon": false,
           "no_done_at_end": false,
           "env_config": {
-            "data_path_1min": "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1H.csv",
-            "data_path_1day": "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1D.csv",
+            "data_path_1min": "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
+            "data_path_1day": "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
             "from_timeindex": -Infinity,
             "to_timeindex": Infinity
           },
@@ -3013,7 +3013,7 @@
       "export_formats": [],
       "status": "RUNNING",
       "start_time": 1598780234.1161103,
-      "logdir": "/tmp/pycharm_project_716/main/vbrl/v2/log/SAC/SAC_VBEnv_V2_0_2020-08-30_18-37-14fy09sbk_",
+      "logdir": "/tmp/pycharm_project_22/main/vbrl/v2/log/SAC/SAC_VBEnv_V2_0_2020-08-30_18-37-14fy09sbk_",
       "runner": null,
       "result_logger": null,
       "last_debug": 1598787905.241385,
@@ -3058,7 +3058,7 @@
     "_server_port": 4321,
     "_cached_trial_decisions": {},
     "_should_stop_experiment": false,
-    "_local_checkpoint_dir": "/tmp/pycharm_project_716/main/vbrl/v2/log/SAC",
+    "_local_checkpoint_dir": "/tmp/pycharm_project_22/main/vbrl/v2/log/SAC",
     "_remote_checkpoint_dir": null,
     "_stopper": {
       "_type": "CLOUDPICKLE_FALLBACK",
@@ -3069,7 +3069,7 @@
     "_last_checkpoint_time": 1598787972.651985,
     "_checkpoint_period": 10,
     "_session_str": "2020-08-30_18-37-14",
-    "checkpoint_file": "/tmp/pycharm_project_716/main/vbrl/v2/log/SAC/experiment_state-2020-08-30_18-37-14.json",
+    "checkpoint_file": "/tmp/pycharm_project_22/main/vbrl/v2/log/SAC/experiment_state-2020-08-30_18-37-14.json",
     "launch_web_server": false
   },
   "stats": {

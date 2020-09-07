@@ -197,6 +197,7 @@ class VBEnv_V2(VBEnv):
         super(VBEnv_V2, self).__init__(*args, **kwargs)
         self.action_space = gym.spaces.Box(np.array([0.5, 0]), np.array([1.2, 1]))
 
+from blqt.backtest import utils
 
 class VBEnv_V3(gym.Env):
     def __init__(self, env_config):
@@ -206,6 +207,9 @@ class VBEnv_V3(gym.Env):
         from_timeindex = env_config["from_timeindex"]
         to_timeindex = env_config["to_timeindex"]
         self.k = env_config["k"]
+
+        if isinstance(to_timeindex, str):
+            to_timeindex = time.mktime(datetime.datetime.strptime(to_timeindex, "%Y-%m-%d").timetuple())
 
         initial_margin = 10000000
 
@@ -350,8 +354,7 @@ class VBEnv_V3(gym.Env):
         next_observation = self._get_observation()
         done = True if (self.indexer.lastidx - 2) == (self.indexer.idx) else False
         if done:
-            print(f"overall P&L : {np.round(self.broker.pv / self.initial_margin * 100 - 100, 2)}%, "
-                  f"k:{np.round(np.mean(self.k), 2)}, bet:{np.round(np.mean(self.bet), 2)}")
+            print(f"overall P&L : {np.round(self.broker.pv / self.initial_margin * 100 - 100, 2)}%")
         return next_observation, reward, done, {}
 
 

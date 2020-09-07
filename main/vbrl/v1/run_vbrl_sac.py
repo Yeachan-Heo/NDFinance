@@ -96,6 +96,6 @@ def first_test(data_path_1day, data_path_1min, restore_path):
 if __name__ == '__main__':
     n = 5000
     first_test(
-        "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1D.csv",
-        "/tmp/pycharm_project_716/data/bitmex/XBTUSD_1H.csv",
-        f"/tmp/pycharm_project_716/main/vbrl/checkpoint_{n}/checkpoint-{n}")
+        "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
+        "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
+        f"/tmp/pycharm_project_22/main/vbrl/checkpoint_{n}/checkpoint-{n}")
