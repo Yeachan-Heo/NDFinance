@@ -23,7 +23,7 @@ def make_data(path):
 
 
 def first_test(tickers, data_path_1day_lst, data_path_1min_lst, restore_path, name="bt_result"):
-    initial_margin = 10000000
+    initial_margin = 10000
 
     data_provider = BacktestDataProvider()
 
@@ -60,11 +60,11 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, restore_path, na
 
     data_provider.register_time_indexer(indexer)
 
-    broker = BackTestBroker(data_provider, indexer)
+    broker = BackTestBroker(data_provider, indexer, use_withdraw=False)
     broker.initialize(margin=initial_margin)
 
     for ticker in tickers:
-        Ticker = FinancialProduct(ticker, 1, 1, 0.0004, 1, 1, 0.000001)
+        Ticker = FinancialProduct(ticker, 0.0000001, 0.0000001, 0.0004, 1, 1, 1)
         broker.add_ticker(Ticker)
 
     config = ppo.DEFAULT_CONFIG.copy()
@@ -77,7 +77,7 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, restore_path, na
         "to_timeindex": np.inf
     }
 
-    config["framework"] = "torch"
+    config["framework"] = "tf"
     config["num_workers"] = 1
     config["num_gpus"] = 1
 
@@ -87,7 +87,7 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, restore_path, na
     agent = ppo.PPOTrainer(config=config, env=VBEnv)
     agent.restore(restore_path)
 
-    stratagy = VBAgentStratagyV3MT(agent, k=0.6)
+    stratagy = VBAgentStratagyV5MT(agent, k=0.5, leverage=1)
 
     logger = BasicLogger(tickers[0])
 
@@ -101,19 +101,19 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, restore_path, na
     system.result()
     broker.calc_pv()
     system.plot()
+
     system.save()
 
 
 if __name__ == '__main__':
-    for i in range(1, 8):
-        n = i * 100
+        n = 3000
         first_test(
             ["XBTUSD","ETHUSD"],
-            ["/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
-             "/tmp/pycharm_project_22/data/bitmex/ETHUSD_1D.csv"],
+            ["/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XBTUSD.csv",
+             "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHUSD.csv"],
 
-            ["/tmp/pycharm_project_22/data/bitmex/XBTUSD_10T.csv",
-            "/tmp/pycharm_project_22/data/bitmex/ETHUSD_10T.csv"],
+            ["/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/XBTUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/ETHUSD.csv"],
 
-            f"/tmp/pycharm_project_22/main/vbrl/v3/log/xbt_partial/PPO/PPO_VBEnv_V3_0_2020-09-07_10-12-37qv3rf7b8/checkpoint_{n}/checkpoint-{n}",
-            name=f"./bt_results_xbtusd_partial/vbrl_v3_{i}_5min")
+            f"/home/bellmanlabs/Projects/ray_results/VBEnv_V7/PPO/PPO_VBEnv_V7_0_2020-09-11_08-49-20irdzf9c8/checkpoint_{n}/checkpoint-{n}",
+            name=f"/home/bellmanlabs/Projects/log/vbrl_multiticker_v4/{n}")

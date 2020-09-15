@@ -88,9 +88,8 @@ if __name__ == '__main__':
     #for i in range(1, 2):
     first_test(
             ["XBTUSD","ETHUSD"],
-            ["/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
-             "/tmp/pycharm_project_22/data/bitmex/ETHUSD_1D.csv",
-             ],
+            ["/home/bellmanlabs/Data/bitmex/trade/ohlc/XBTUSD_1D.csv",
+             "/home/bellmanlabs/Data/bitmex/trade/ohlc/ETHUSD_1D.csv"],
 
-            ["/tmp/pycharm_project_22/data/bitmex/XBTUSD_10T.csv",
-            "/tmp/pycharm_project_22/data/bitmex/ETHUSD_10T.csv"],)
+            ["/home/bellmanlabs/Data/bitmex/trade/ohlc/XBTUSD_30T.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/ETHUSD_30T.csv"],)

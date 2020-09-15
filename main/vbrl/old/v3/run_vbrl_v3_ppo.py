@@ -63,7 +63,7 @@ def first_test(data_path_1day, data_path_1min, restore_path, name="bt_result"):
         "to_timeindex": np.inf
     }
 
-    config["framework"] = "torch"
+    config["framework"] = "tf"
     config["num_workers"] = 1
     config["num_gpus"] = 1
 
@@ -92,10 +92,10 @@ def first_test(data_path_1day, data_path_1min, restore_path, name="bt_result"):
 
 if __name__ == '__main__':
     #for i in range(1, 2):
-        i = 5
+        i = 60
         n = i * 100
         first_test(
-            "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1D.csv",
-            "/tmp/pycharm_project_22/data/bitmex/XBTUSD_1H.csv",
-            f"/tmp/pycharm_project_22/main/vbrl/v3/log/xbt_partial/PPO/PPO_VBEnv_V3_0_2020-09-07_10-12-37qv3rf7b8/checkpoint_{n}/checkpoint-{n}",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/ETHUSD_1D.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/ETHUSD_1H.csv",
+            f"/home/bellmanlabs/Projects/ray_results/VBEnv_V3/PPO/PPO_VBEnv_V3_0_2020-09-08_10-35-43qsk3pzjh/checkpoint_{n}/checkpoint-{n}",
         )
