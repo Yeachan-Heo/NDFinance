@@ -1,6 +1,6 @@
 from blqt.backtest.data_providers import BacktestDataProvider
 from blqt.backtest.historical_data import TimeIndexedData
-from blqt.backtest.stratagies.VB import *
+from blqt.backtest.stratagies import *
 from blqt.backtest.brokers import BackTestBroker
 from blqt.backtest.loggers import BasicLogger
 from blqt.backtest.base import *
@@ -21,7 +21,7 @@ def first_test(data_path_1d, data_path_1min):
     data.add_array("RSI", ta.RSI(df["close"], timeperiod=14))
     data.add_array("ROCR", ta.ROCR(df["close"], timeperiod=14))
     data.add_array("RANGE", df["high"].values - df["low"].values)
-    
+
     df_1min = pd.read_csv(data_path_1min)
     df_1min["timestamp"] = to_timestamp(df_1min["timestamp"])
     data_1min = TimeIndexedData()
@@ -44,9 +44,9 @@ def first_test(data_path_1d, data_path_1min):
 
     broker.add_ticker(NQ)
 
-    system = DistributedBacktestSystem(n_cores=1)
+    system = DistributedBacktestSystem(n_cores=25)
 
-    stratagy = VBFilterAdjusted("XBTUSD", k=0.6, leverage=1)
+    stratagy = VBFilterAdjustedLongShort("XBTUSD", k=0.6, leverage=1)
 
     logger = BasicLogger("XBTUSD")
 
@@ -61,6 +61,4 @@ def first_test(data_path_1d, data_path_1min):
 
 
 if __name__ == '__main__':
-        first_test(
-        f"/home/bellmanlabs/Data/FX_FUT_DATA/1D/GC.csv",
-        f"/home/bellmanlabs/Data/FX_FUT_DATA/1H/GC.csv")
+    first_test("../data/XBTUSD_20150925-20200806_1day.csv", "../data/XBTUSD_20150925-20200806_5min.csv")

@@ -5,9 +5,7 @@ from dateutils import relativedelta
 from blqt.backtest.historical_data import TimeIndexedData
 import os
 
-def resample_tick(args):
-    data_dir, fname, period, symbol = args
-    df = pd.read_csv(data_dir + fname)
+def resample_tick(df, symbol, period="1T"):
 
     df = df.loc[df["symbol"] == symbol]
 
@@ -32,7 +30,6 @@ def add_close_time(data_path, date_column="timestamp", **kwargs):
     
 def add_close_time_dir(path, **kwargs):
     fnames = os.listdir(path)
-    fnames = list(filter(lambda x: x[-6:] == f"1D.csv", fnames))
     for f in fnames:
         pth = path + f
         add_close_time(pth, **kwargs)
@@ -53,13 +50,14 @@ def resample_ohlc(path, export_path, open="open",high="high",low="low",close="cl
 
     df.to_csv(export_path)
 
-def resample_ohlc_dir(path, from_period, to_period, **kwargs):
+def resample_ohlc_dir(path, from_period, to_period, epath=None, **kwargs):
+    if epath is None:
+        epath = path
     fnames = os.listdir(path)
-    fnames = list(filter(lambda x: x[-6:] == f"{from_period}.csv", fnames))
-    print(fnames)
     for f in fnames:
         pth = path + f
-        epth = path + f[:-6] + f"{to_period}.csv"
+        epth = epath + f
+        print(epth)
         resample_ohlc(pth, epth, period=to_period, **kwargs)
 
 def make_bitmex_data(path):
@@ -72,11 +70,7 @@ def make_bitmex_data(path):
     return data
 
 if __name__ == '__main__':
-    resample_ohlc_dir("../../data/bitmex/", "1T", "5T")
-    resample_ohlc_dir("../../data/bitmex/", "1T", "10T")
-    resample_ohlc_dir("../../data/bitmex/", "1T", "15T")
-    resample_ohlc_dir("../../data/bitmex/", "1T", "30T")
-    resample_ohlc_dir("../../data/bitmex/", "1T", "1H")
-    resample_ohlc_dir("../../data/bitmex/", "1T", "1D")
-
-    add_close_time_dir("../../data/bitmex/", hours=23, minutes=59, seconds=59)
+    for period in ("3T", "5T", "10T", "15T", "30T", "1H", "1D", "1M", "1Y"):
+        resample_ohlc_dir(path="/home/bellmanlabs/Data/FX_FUT_DATA/1T/",
+                  epath=f"/home/bellmanlabs/Data/FX_FUT_DATA/{period}/", from_period="1T", to_period=period)
+    add_close_time_dir("/home/bellmanlabs/Data/FX_FUT_DATA/1D/", hours=23, minutes=59, seconds=59)

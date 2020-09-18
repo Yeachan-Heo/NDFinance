@@ -11,8 +11,13 @@ import ray.rllib.agents.ppo as ppo
 import ray.rllib.agents.ddpg as ddpg
 
 
-def make_data(path):
+def make_data(path, coeff=1):
     df = pd.read_csv(path)
+    df["close"] *= coeff
+    df["open"] *= coeff
+    df["high"] *= coeff
+    df["low"] *= coeff
+    df["volume"] /= coeff
     df["timestamp"] = [time.mktime(datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S").timetuple()) for t in
                        df["timestamp"].tolist()]
     data = TimeIndexedData()
@@ -241,7 +246,7 @@ class VBEnv_V3(gym.Env):
         self.broker.initialize(margin=initial_margin)
         self.initial_margin = initial_margin
 
-        Ticker = FinancialProduct("Ticker", 1, 1, 0.0004, 1, 1, 0.000001)
+        Ticker = FinancialProduct("Ticker", 1e-8, 1e-8, 0.0004, 1, 1, 1e-6)
         self.broker.add_ticker(Ticker)
 
         self.observation_space = gym.spaces.Box(
@@ -274,9 +279,9 @@ class VBEnv_V3(gym.Env):
             high_breakout = self.curr_start + k_range
             low_breakout = self.curr_start - k_range
             if (high_breakout <= self.curr_high) & (self.filtering == 1):
-                self.broker.order_target_weight_pv("Ticker", self.bet)
+                self.broker.order_target_weight_margin("Ticker", self.bet)
             elif (low_breakout >= self.curr_low) & (self.filtering == -1):
-                self.broker.order_target_weight_pv("Ticker", -self.bet)
+                self.broker.order_target_weight_margin("Ticker", -self.bet)
 
         else:
             dt_pos = datetime.datetime.fromtimestamp(self.broker.positions["Ticker"].log[-1].timestamp)
@@ -354,10 +359,269 @@ class VBEnv_V3(gym.Env):
         next_observation = self._get_observation()
         done = True if (self.indexer.lastidx - 2) == (self.indexer.idx) else False
         if done:
+
             print(f"overall P&L : {np.round(self.broker.pv / self.initial_margin * 100 - 100, 2)}%")
         return next_observation, reward, done, {}
 
 
 
+class VBEnv_V4(VBEnv_V3):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V4, self).__init__(*args, **kwargs)
+        self.action_space = gym.spaces.Box(np.array([-1, 0.01]), np.array([1, 1]))
+
+class VBEnv_V5(VBEnv_V3):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V5, self).__init__(*args, **kwargs)
+        self.action_space = gym.spaces.Box(np.array([-1, 0]), np.array([1, 3]))
+        self.default_reward = -0.1
+
+class VBEnv_V6(VBEnv_V5):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V6, self).__init__(*args, **kwargs)
+
+    def convert_reward(self, ret):
+        if ret > 0:
+            return ret
+        else:
+            return ret*5 + self.default_reward
 
 
+class VBEnv_V7(VBEnv_V5):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V7, self).__init__(*args, **kwargs)
+        self.default_reward = -0.005
+
+    def convert_reward(self, ret):
+        if ret > 0:
+            return ret
+        else:
+            return ret*0.5 + self.default_reward
+
+
+class VBEnv_V8(VBEnv_V3):
+    def __init__(self, *args, **kwargs):
+        super(VBEnv_V8, self).__init__(*args, **kwargs)
+        self.action_space = gym.spaces.Box(np.array([-1, 0.1]), np.array([1, 3]))
+        self.default_reward = self.default_reward * 3
+
+
+
+class VBRLEnv(gym.Env):
+    def __init__(self, env_config):
+        super(VBRLEnv, self).__init__()
+
+        self.data_path_1min = env_config["data_path_1min"]
+        self.data_path_1day = env_config["data_path_1day"]
+        self.from_timeindex = env_config["from_timeindex"]
+        self.to_timeindex = env_config["to_timeindex"]
+        self.k = env_config["k"]
+        self.time_cut = env_config["time_cut"]
+        self.epi_len = env_config["episode_len"]
+        self.default_reward = env_config["default_reward"]
+        self.max_leverage = env_config["max_leverage"]
+        self.min_bet = env_config["min_bet"]
+        self.window_size = int(self.epi_len / TimeFrames.Day)
+
+        self.observation_space = gym.spaces.Box(
+            np.zeros(5) - 100, np.zeros(5) + 100)
+        self.action_space = gym.spaces.Box(np.array([-1, self.min_bet]), np.array([1, self.max_leverage]))
+        self.initial_margin = 10000
+        self.broker = None
+        self.initialize_system()
+
+
+    def initialize_system(self):
+        if not self.broker is None:
+            print(f"avg P&L : {np.round(np.mean(self.broker.trade_hist_rate_weighted)*100, 4)}%")
+
+        i = np.random.randint(0, len(self.data_path_1min))
+        data_path_1min = self.data_path_1min[i]
+        data_path_1day = self.data_path_1day[i]
+
+        data_1min = make_data(data_path_1min)
+        data_1day = make_data(data_path_1day)
+
+        _, _, _, ch, b = TA_BBANDS(data_1day["close"])
+        data_1day.add_array("BAND_WIDTH", ch)
+        data_1day.add_array("%b", b)
+        data_1day.add_array("MA20", ta.SMA(data_1day["close"], timeperiod=20))
+        data_1day.add_array("MA5", ta.SMA(data_1day["close"], timeperiod=5))
+        data_1day.add_array("RSI", ta.RSI(data_1day["close"], timeperiod=14))
+        data_1day.add_array("ROCR", ta.ROCR(data_1day["close"], timeperiod=14))
+        data_1day.add_array("RANGE", data_1day["high"] - data_1day["low"])
+
+        n = np.random.randint(low=0, high=len(data_1day["timestamp"])-21-self.window_size)
+
+        self.indexer = TimeIndexer(data_1min["timestamp"],
+                                   from_timestamp=np.clip(data_1day["timestamp"][21+n], self.from_timeindex, np.inf),
+                                   to_timestamp=np.clip(data_1day["timestamp"][21+n+self.window_size], -np.inf, self.to_timeindex))
+
+        self.data_provider = data_providers.BacktestDataProvider()
+        self.data_provider.register_time_indexer(self.indexer)
+
+        self.data_provider.register_ohlcv_data("Ticker", data_1min, timeframe=TimeFrames.Minute)
+        self.data_provider.register_ohlcv_data("Ticker", data_1day, timeframe=TimeFrames.Day)
+
+        self.broker = brokers.BackTestBroker(self.data_provider, self.indexer)
+        self.broker.initialize(margin=self.initial_margin)
+
+        Ticker = FinancialProduct("Ticker", 1e-8, 1e-8, 0.0004, 1, 1, 1e-6)
+        self.broker.add_ticker(Ticker)
+
+
+    def logic(self):
+        dt = datetime.datetime.fromtimestamp(self.broker.indexer.timestamp)
+        day = dt.day
+
+        day_changed = False
+        if day != self.prev_day:
+            self.prev_day = day
+            self.range = self.data_provider.current("Ticker", "RANGE", timeframe=TimeFrames.Day)
+            self.curr_start = self.data_provider.current("Ticker", "open", timeframe=TimeFrames.Minute)
+            self.curr_low, self.curr_high = np.inf, 0
+            day_changed = True
+
+        high, low = self.data_provider.current("Ticker", "high", timeframe=TimeFrames.Minute), \
+                    self.data_provider.current("Ticker", "low", timeframe=TimeFrames.Minute)
+
+        if self.curr_high < high: self.curr_high = high
+        if self.curr_low > low: self.curr_low = low
+
+        if not self.broker.positions:
+            if day_changed:
+                return 0
+            k_range = self.k * self.range
+            high_breakout = self.curr_start + k_range
+            low_breakout = self.curr_start - k_range
+            if (high_breakout <= self.curr_high) & (self.filtering == 1):
+                self.broker.order_target_weight_margin("Ticker", self.bet)
+            elif (low_breakout >= self.curr_low) & (self.filtering == -1):
+                self.broker.order_target_weight_margin("Ticker", -self.bet)
+
+        else:
+            dt_pos = datetime.datetime.fromtimestamp(self.broker.positions["Ticker"].log[-1].timestamp)
+            day_pos = dt_pos.day
+            hr = dt.hour
+            if (day_pos != day) & (hr >= self.time_cut):
+                self.broker.close_position(
+                    "Ticker", price=self.broker.data_provider.current("Ticker", "open", timeframe=TimeFrames.Minute))
+                if self.temp == len(self.broker.trade_hist_rate_weighted):
+                    ret = 0
+                else:
+                    ret = self.broker.trade_hist_rate_weighted[-1]
+                self.temp = len(self.broker.trade_hist_rate_weighted)
+                return ret
+
+    def run_logic(self):
+        ret = None
+        while ret is None:
+            self.broker.indexer.move()
+            self.broker.calc_pv()
+            self.broker.update_weight()
+            ret = self.logic()
+            end = True if (self.indexer.lastidx - 2) == (self.indexer.idx) else False
+            if end:
+                return 0
+        return ret
+
+    def is_end(self):
+        end = True if (self.indexer.lastidx - 2) == (self.indexer.idx) else False
+        if end: self.initialize_system()
+        return end
+
+    def convert_reward(self, ret):
+        return ret if ret > 0 else ret + self.default_reward
+
+    def _get_observation(self):
+        ma20 = self.data_provider.current("Ticker", "MA20", timeframe=TimeFrames.Day)
+        ma5 = self.data_provider.current("Ticker", "MA5", timeframe=TimeFrames.Day)
+        rsi = self.data_provider.current("Ticker", "RSI", timeframe=TimeFrames.Day)
+        rocr = self.data_provider.current("Ticker", "ROCR", timeframe=TimeFrames.Day)
+        bw = self.data_provider.current("Ticker", "BAND_WIDTH", timeframe=TimeFrames.Day)
+        b = self.data_provider.current("Ticker", "%b", timeframe=TimeFrames.Day)
+        ma_div = ma5 / ma20
+        rsi /= 100
+
+        return np.array([ma_div, rsi, rocr, bw, b])
+
+    def reset(self):
+        self.curr_low, self.curr_high = np.inf, 0
+        self.curr_start = 0
+        self.range = np.nan
+
+        self.temp = 0
+        self.broker.trade_hist = []
+        self.broker.trade_hist_rate = []
+        self.ks = []
+        self.bets = []
+
+        self.prev_day = self.indexer.datetime.day
+        self.prev_epi_ts = self.indexer.timestamp
+
+        while True:
+            self.indexer.move()
+            observation = self._get_observation()
+            if not (observation == np.nan).any():
+                self.prev_day = self.indexer.datetime.day
+                self.prev_epi_ts = self.indexer.timestamp
+                if self.is_end():
+                    self.initialize_system()
+                    return self.reset()
+                return observation
+
+    def step(self, action: np.ndarray):
+        self.filtering = np.round(action[0]).astype(int)
+        self.bet = action[1]
+
+        ret = self.run_logic()
+        reward = self.convert_reward(ret)
+        next_observation = self._get_observation()
+
+        if (next_observation == np.nan).any():
+            return self.observation_space.sample(), reward, True, {}
+
+        end = self.is_end()
+
+        return next_observation, reward, end, {}
+
+
+if __name__ == '__main__':
+    k, time_cut, episode_len, default_reward, min_bet, max_leverage = (0.5, 3, 17280000, -0.01, 0.1, 1)
+
+    env_config = {
+        "data_path_1min" : [
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/XRPQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/EOSQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/LTCQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/BCHQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/ADAQUT.csv",
+                                           ],
+
+        "data_path_1day": [
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XRPQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/EOSQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/LTCQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/BCHQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ADAQUT.csv",
+                                           ],
+
+        "default_reward" : default_reward,
+        "max_leverage": max_leverage,
+        "from_timeindex" : -np.inf,
+        "to_timeindex" : np.inf,
+        "episode_len": episode_len,
+        "time_cut" : time_cut,
+        "min_bet": min_bet,
+        "k" : k,
+    }
+
+    env = VBRLEnv(env_config)
+    for x in range(1000):
+        state = env.reset()
+        done = False
+        while not done:
+            state, reward, done, _ = env.step((np.random.choice([-1, 0, 1]), np.random.uniform()*3))
+            if (np.abs(state) == np.inf).any() or (state == np.nan).any():
+                print(state, reward, done)
+                break

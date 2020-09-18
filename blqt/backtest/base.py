@@ -14,8 +14,15 @@ class TimeIndexer(object):
     def __init__(self, timestamp_lst, from_timestamp=-np.inf, to_timestamp=np.inf):
         self.timestamp = None
 
+        if isinstance(to_timestamp, str):
+            to_timestamp = time.mktime(datetime.datetime.strptime(to_timestamp, "%Y-%m-%d").timetuple())
+
+        if isinstance(from_timestamp, str):
+            from_timestamp = time.mktime(datetime.datetime.strptime(from_timestamp, "%Y-%m-%d").timetuple())
+
         self.timestamp_lst =timestamp_lst[np.where(
             (from_timestamp <= timestamp_lst) & (timestamp_lst <= to_timestamp))[0]]
+
 
         self.idx = -1
         self.lastidx = len(self.timestamp_lst)
@@ -81,9 +88,9 @@ class Position:
             return realized_pnl
 
     def update_value(self, current_price):
-        self.unrealized_pnl = (current_price - self.avg_price) // self.product.tick_size * self.product.tick_value * self.amount
+        self.unrealized_pnl = (current_price - self.avg_price) * self.amount
         self.unrealized_pnl_rate = (current_price / self.avg_price - 1) * np.sign(self.amount)
-        self.position_value = current_price // self.product.tick_size * self.product.tick_value * self.amount
+        self.position_value = current_price  * self.amount
 
     def update_weight(self, pv):
         self.weight = self.position_value / pv
@@ -122,17 +129,17 @@ class System:
         print(self.result_str)
 
     def plot(self):
-        self.figs = self.logger.plot_relative()
+        self.fig = self.logger.plot_relative()
 
     def save(self):
+        print(f"saving at: {self.name}")
         if not os.path.exists(self.name):
             os.makedirs(self.name)
 
         with open(self.name + "/result.txt", "w") as f:
             f.write(self.result_str)
 
-        for i, fig in enumerate(self.figs):
-            fig.savefig(self.name + f"/fig_{i}.png")
+        self.fig.savefig(self.name + f"/figure.png", dpi=500)
 
 
 
@@ -270,7 +277,7 @@ class DistributedBacktestSystem():
         print(self.result_str)
 
     def plot(self):
-        self.figs = self.new_logger.plot_relative()
+        self.fig = self.new_logger.plot_relative()
 
     def save(self):
         print(f"saving at: {self.name}")
@@ -280,8 +287,7 @@ class DistributedBacktestSystem():
         with open(self.name + "/result.txt", "w") as f:
             f.write(self.result_str)
 
-        for i, fig in enumerate(self.figs):
-            fig.savefig(self.name + f"/fig_{i}.png")
+        self.fig.savefig(self.name + f"/figure.png", dpi=500)
 
 
 class TimeFrames:
@@ -290,6 +296,20 @@ class TimeFrames:
     Hour = Minute * 60
     Day = Hour * 24
     Week = Day * 7
+
+
+class Stratagy:
+    def __init__(self):
+        self.sys = None
+
+    def set_system(self, system):
+        self.sys = system
+        self.broker = system.broker
+        self.data_provider = system.data_provider
+        self.logger = self.sys.logger
+
+    def logic(self):
+        raise NotImplementedError
 
 
 

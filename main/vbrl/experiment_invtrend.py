@@ -44,7 +44,7 @@ def main(k, time_cut, episode_len, default_reward, min_bet, max_leverage):
         config=config,
         checkpoint_freq=50,
         checkpoint_at_end=True,
-        local_dir=f"/home/bellmanlabs/Data/Projects/ray_results/VBRL/{k}_{time_cut}_{default_reward}_{min_bet}_{max_leverage}/",
+        local_dir=f"/home/bellmanlabs/Data/Projects/ray_results/VBRL_Invtrend/{k}_{time_cut}_{default_reward}_{min_bet}_{max_leverage}/",
         stop={"episodes_total": 10000}
     )
 
@@ -56,9 +56,8 @@ if __name__ == '__main__':
     for k in [0.5, 0.6, 0.7]:
         for time_cut in [3, 9, 15]:
             for default_reward in [-0.01, -0.03, -0.05]:
-                for min_bet in [0, 0.2, 0.4]:
                     for max_leverage in [1, 2, 3]:
-                        cfgs.append((k, time_cut, episode_len, default_reward, min_bet, max_leverage)) 
+                        cfgs.append((k, time_cut, episode_len, default_reward, -max_leverage, max_leverage))
     
     for i, cfg in enumerate(cfgs[last_cfg:]):
         print(f"running config i:{cfg}")

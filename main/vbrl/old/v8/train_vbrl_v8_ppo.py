@@ -9,17 +9,35 @@ if __name__ == '__main__':
     config["env"] = VBEnv_V8
 
     config["env_config"] = {
-        "data_path_1min" : "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/XBTUSD.csv",
-        "data_path_1day": "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XBTUSD.csv",
+        "data_path_1min" : [
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XRPQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/EOSQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/LTCQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/BCHQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ADAQUT.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/TRXQUT.csv"
+                                           ],
+        "data_path_1day": [
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XRPQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/EOSQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/LTCQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/BCHQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ADAQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/TRXQUT.csv"
+                                           ],
         "from_timeindex" : -np.inf,
         "to_timeindex" : np.inf,
-        "k" : 0.6
+        "k" : 0.6,
     }
 
     config["framework"] = "tf"
     config["num_workers"] = 11
     config["num_gpus"] = 1
     config["seed"] = 7777
+    config["lr"] = 1e-5
+    config["opt_type"] = "rmsprop"
 
     tune.run(
         ppo.PPOTrainer,

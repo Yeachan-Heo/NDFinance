@@ -4,7 +4,13 @@ import datetime
 import time
 import multiprocessing
 import psutil
+import os
 
+def listdirs(folder):
+    return [
+        d for d in (os.path.join(folder, d1) for d1 in os.listdir(folder))
+        if os.path.isdir(d)
+    ]
 
 def split_list(alist, wanted_parts=1):
     length = len(alist)

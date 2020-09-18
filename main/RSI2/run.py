@@ -1,14 +1,13 @@
 from blqt.backtest.data_providers import BacktestDataProvider
 from blqt.backtest.historical_data import TimeIndexedData
-from blqt.backtest.stratagies.VB import *
+from blqt.backtest.stratagies.mean_reversion import RSI2Stratagy
 from blqt.backtest.brokers import BackTestBroker
-from blqt.backtest.loggers import BasicLogger
 from blqt.backtest.base import *
-from talib import abstract as ta
 from blqt.backtest.technical import *
-from blqt.rl_envs.vb_env import VBEnv
+from blqt.rl_envs.vb_env import VBRLEnv
+from blqt.backtest.loggers import BasicLogger
+
 import ray
-import ray.rllib.agents.sac as sac
 import ray.rllib.agents.ppo as ppo
 
 
@@ -22,8 +21,10 @@ def make_data(path):
     return data
 
 
-def first_test(tickers, data_path_1day_lst, data_path_1min_lst, name="bt_result"):
-    initial_margin = 10000000
+def first_test(tickers, data_path_1day_lst, data_path_1min_lst, name="bt_results"):
+
+
+    initial_margin = 100000
 
     data_provider = BacktestDataProvider()
 
@@ -33,17 +34,10 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, name="bt_result"
         data_1min = make_data(data_path_1min)
         data_1day = make_data(data_path_1day)
 
-        _, _, _, ch, b = TA_BBANDS(data_1day["close"])
-        data_1day.add_array("BAND_WIDTH", ch)
-        data_1day.add_array("%b", b)
-        data_1day.add_array("MA20", ta.SMA(data_1day["close"], timeperiod=20))
-        data_1day.add_array("MA5", ta.SMA(data_1day["close"], timeperiod=5))
-        data_1day.add_array("RSI", ta.RSI(data_1day["close"], timeperiod=14))
-        data_1day.add_array("ROCR", ta.ROCR(data_1day["close"], timeperiod=14))
-        data_1day.add_array("RANGE", data_1day["high"] - data_1day["low"])
+        data_1day.add_array("RSI2", ta.RSI(data_1day["close"], timeperiod=14))
 
         data_provider.register_ohlcv_data(ticker, data_1min, timeframe=TimeFrames.Minute)
-        data_provider.register_ohlcv_data(ticker, data_1day, timeframe=TimeFrames.Day)
+        data_provider.register_ohlcv_data(ticker, data_1day, timeframe=TimeFrames.Hour)
 
         if ts_lst is None:
             ts_lst = data_1min["timestamp"]
@@ -60,18 +54,19 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, name="bt_result"
 
     data_provider.register_time_indexer(indexer)
 
-    broker = BackTestBroker(data_provider, indexer, use_withdraw=True)
+    broker = BackTestBroker(data_provider, indexer, use_withdraw=False)
     broker.initialize(margin=initial_margin)
 
     for ticker in tickers:
-        Ticker = FinancialProduct(ticker, 1, 1, 0.0004, 1, 1, 0.000001)
+        Ticker = FinancialProduct(ticker, 1, 1, 0, 1, 1, 1)
         broker.add_ticker(Ticker)
 
-    stratagy = VBFilterAdjustedLongShortMT(k=0.6, leverage=2)
+
+    stratagy = RSI2Stratagy(time_cut=TimeFrames.Day, rsi_2_threshold=30)
 
     logger = BasicLogger(tickers[0])
 
-    system = BacktestSystem(name=name)
+    system = DistributedBacktestSystem(name=name, n_cores=1)
     system.set_broker(broker)
     system.set_data_provider(data_provider)
     system.set_logger(logger)
@@ -81,19 +76,22 @@ def first_test(tickers, data_path_1day_lst, data_path_1min_lst, name="bt_result"
     system.result()
     broker.calc_pv()
     system.plot()
+
     system.save()
 
 
 if __name__ == '__main__':
-    #for i in range(1, 2):
     first_test(
-            ["XBTUSD","ETHUSD"],
-                [
-                    "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XBTUSD.csv",
-                    "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHUSD.csv",
-                ],
+        [
+            "ETH",
+            "XBT",
+        ],
 
-                [
-                    "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/XBTUSD.csv",
-                    "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/ETHUSD.csv",
-                ],)
+        [
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XBTUSD.csv",
+        ],
+        [
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/ETHUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1H/XBTUSD.csv",
+        ])

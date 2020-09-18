@@ -1,6 +1,6 @@
 from blqt.backtest.data_providers import BacktestDataProvider
 from blqt.backtest.historical_data import TimeIndexedData
-from blqt.backtest.stratagies import *
+from blqt.backtest.stratagies.trend import *
 from blqt.backtest.brokers import BackTestBroker
 from blqt.backtest.loggers import BasicLogger
 from blqt.backtest.base import *
@@ -16,10 +16,10 @@ def first_test(data_path):
     data = TimeIndexedData()
     data.from_pandas(df)
 
-    data.add_array("MA200", ta.SMA(df["close"], timeperiod=200 * 60))
-    data.add_array("MA50", ta.SMA(df["close"], timeperiod=50 * 60))
-    data.add_array("ADX", ta.ADX(df["high"], df["low"], df["close"], timeperiod=14 * 5))
-    data.add_array("momentum", ta.MOM(df["close"], timeperiod=60))
+    data.add_array("MA200", ta.SMA(df["close"], timeperiod=200))
+    data.add_array("MA50", ta.SMA(df["close"], timeperiod=50))
+    data.add_array("ADX", ta.ADX(df["high"], df["low"], df["close"], timeperiod=14))
+    data.add_array("momentum", ta.MOM(df["close"], timeperiod=10))
 
     indexer = TimeIndexer(df["timestamp"].values)
 
@@ -36,7 +36,7 @@ def first_test(data_path):
 
     system = BacktestSystem()
 
-    stratagy = ActualMomentumStratagy(leverage=1, rebalance_period=60*60*24*14)
+    stratagy = ActualMomentumStratagy(leverage=1, rebalance_period=TimeFrames.Day*3)
 
     logger = BasicLogger("NQ")
 
@@ -51,4 +51,5 @@ def first_test(data_path):
 
 
 if __name__ == '__main__':
-    first_test("../data/NQ_2017_2020.csv")
+    ticker="GC"
+    first_test(f"/home/bellmanlabs/Data/FX_FUT_DATA/30T/{ticker}.csv")

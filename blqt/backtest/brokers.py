@@ -12,7 +12,8 @@ class Broker(object):
 
 
 class BackTestBroker(Broker):
-    def __init__(self, data_provider, time_indexer, *args, **kwargs):
+    def __init__(self, data_provider, time_indexer,
+                 use_withdraw=False, withdraw_period=TimeFrames.Minute*60000, *args, **kwargs):
         super(BackTestBroker, self).__init__(*args, **kwargs)
         self.margin = None
         self.tickers: Dict[str, FinancialProduct] = {}
@@ -23,10 +24,19 @@ class BackTestBroker(Broker):
         self.trade_hist_rate = []
         self.trade_hist_rate_weighted = []
 
+        self.use_withdraw = use_withdraw
+        self.withdraw_period = withdraw_period
+        self.last_withdraw = self.indexer.timestamp
+
     def initialize(self, margin):
+        self.initial_margin = margin
         self.margin = margin
         self.pv = margin
+        self.withdraw_account = 0
         self.positions.clear()
+
+    def withdraw(self, n):
+        self.withdraw_account += n
 
     def deposit(self, money):
         self.margin += money
@@ -35,14 +45,24 @@ class BackTestBroker(Broker):
         self.tickers[ticker.ticker] = ticker
 
     def calc_pv(self):
-        self.pv = self.margin
+        self.pv = self.margin + self.withdraw_account
+        unrealized = 0
         for key, item in self.positions.items():
             item.update_value(self.data_provider.current(key, "close") * (1 - item.product.slippage * np.sign(item.amount)))
-            self.pv += item.unrealized_pnl
+            unrealized += item.unrealized_pnl
         pos_values = np.sum([np.abs(p.position_value) for p in self.positions.values()])
 
-        self.orderable_margin = self.pv - pos_values
+        self.pv += unrealized
+        self.orderable_margin = self.margin - pos_values
         self.leverage = pos_values / self.pv
+
+        if self.use_withdraw:
+            if self.indexer.timestamp - self.last_withdraw >= self.withdraw_period:
+                withdraw = self.margin - self.initial_margin
+                self.withdraw(withdraw)
+                self.deposit(-withdraw)
+                self.last_withdraw = self.indexer.timestamp
+
 
     def update_weight(self):
         [item.update_weight(self.pv) for item in self.positions.values()]
@@ -87,9 +107,9 @@ class BackTestBroker(Broker):
         if price is None:
             price = self.data_provider.current(ticker, label="close")
 
-        target_amount = value * weight / (
-                price // product.tick_size * product.tick_value
-        ) // min_amount * min_amount
+        target_amount = value * weight / price // min_amount * min_amount
+
+
 
         amount = target_amount - self.positions[ticker].amount if ticker in self.positions.keys() else target_amount
         return self.order_limit(ticker, amount, price)
@@ -168,8 +188,93 @@ class WebullBroker(Broker):
 
 import ccxt
 
-class CCXTBroker(Broker):
-    def __init__(self):
-        super(CCXTBroker, self).__init__()
+class BinanceFuturesBroker(Broker):
+    def __init__(self, api_key, secret, margin_currency="USDT"):
+        super(BinanceFuturesBroker, self).__init__()
+        self.exchange = ccxt.binance({
+            'apiKey': api_key,
+            'secret': secret,
+            'timeout': 30000,
+            'enableRateLimit': True,
+            'futures' : True
+        })
+        self.margin_currency = margin_currency
+
+        print(self.exchange.id, self.exchange.load_markets())
+
+    def order_market(self, ticker, amount):
+        side = sign(amount)
+
+        if side == 0:
+            return
+
+        amount = abs(amount)
+
+        if side == 1:
+            self.exchange.create_market_buy_order(
+                symbol=ticker,
+                amount=amount
+            )
+        elif side == -1:
+            self.exchange.create_market_sell_order(
+                symbol=ticker,
+                amount=amount
+            )
+
+    def order_limit(self, ticker, amount, price):
+        side = sign(amount)
+
+        if side == 0:
+            return
+
+        amount = abs(amount)
+
+        if side == 1:
+            self.exchange.create_order(
+                symbol=ticker,
+                type="limit",
+                side="buy",
+                amount=amount,
+                price=price,
+            )
+        elif side == -1:
+            self.exchange.create_order(
+                symbol=ticker,
+                type="limit",
+                side="sell",
+                amount=amount,
+                price=price,
+            )
+
+    def order_target_weight(self, value, ticker, weight, price=None):
+
+        product = self.tickers[ticker]
+        min_amount = product.min_amount
+
+        target_amount = value * weight / (
+                price // product.tick_size * product.tick_value
+        ) // min_amount * min_amount
+
+        amount = target_amount - self.positions[ticker].amount if ticker in self.positions.keys() else target_amount
+
+        if price is None:
+            self.order_market(ticker, amount)
+        else:
+            self.order_limit(ticker, amount, price)
+
+
+    def order_target_weight_margin(self, ticker):
+        currency = ticker.split("/")[-1]
+        free = 0
+        for asset_dict in self.exchange.fetch_balance()["assets"]:
+            if asset_dict["asset"] == currency:
+                free = 1
+
+
+
+
+
+
+
 
 

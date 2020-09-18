@@ -114,8 +114,8 @@ if __name__ == '__main__':
                 "LTC",
                 "ETH",
                 "BCH",
-                # "ADA",
-                # "TRX"
+                "ADA",
+                "TRX"
             ],
             [
                 "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/XRPQUT.csv",
@@ -123,8 +123,8 @@ if __name__ == '__main__':
                 "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/LTCQUT.csv",
                 "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ETHQUT.csv",
                 "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/BCHQUT.csv",
-                # "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ADAQUT.csv",
-                # "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/TRXQUT.csv"
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/ADAQUT.csv",
+                "/home/bellmanlabs/Data/bitmex/trade/ohlc/1D/TRXQUT.csv"
             ],
 
             [
