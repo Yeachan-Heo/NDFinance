@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='BellmanFinance',
-    version='',
+    version='0.0.1',
     packages=['blqt', 'blqt.rl_envs', 'blqt.backtest', 'blqt.backtest.old', 'blqt.backtest.stratagies',
               'blqt.reporters', 'blqt.reporters.telebot_krx_agency_forigner', 'blqt.technical', 'blqt.data_utils',
               'blqt.data_utils.crawlers', 'blqt.data_utils.crawlers.naver', 'blqt.data_utils.crawlers.bitmex',
