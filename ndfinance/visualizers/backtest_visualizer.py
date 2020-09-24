@@ -389,7 +389,6 @@ class BasicVisualizer(Visualizer):
                 calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1W")[-1] * 100,
                 label="1W P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
             ),
-            "1M_pnl_bar"
         }
 
 
