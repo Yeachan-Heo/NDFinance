@@ -36,6 +36,13 @@ def get_rolling_cagr(pv_lst, timestamp_lst, period):
     return to_datetime(timestamp_lst), cagr_lst
 
 
+def get_rolling_pnl_ratio(pv_lst, timestamp_lst, period):
+    window_size = get_rolling_window_size(timestamp_lst, period)
+    timestamp_lst = rolling_window(timestamp_lst, window_size, lambda x: x[-1])
+    cagr_lst = rolling_window(pv_lst, window_size, lambda x: -x[np.where(x > 0)].mean() / x[np.where(x<0)].mean())
+    cagr_lst = np.array(cagr_lst)
+    return to_datetime(timestamp_lst), cagr_lst
+
 def get_rolling_sharpe_sortino_ratio(pv_lst, benchmark_lst, timestamp_lst, period):
     index = pd.DatetimeIndex([
         datetime.datetime.fromtimestamp(d) for d in timestamp_lst
@@ -87,11 +94,11 @@ def calc_freq_pnl(pv_lst, timestamp_lst, freq="1M"):
 
     pnl_perc = (df["close"] / df["open"]).values - 1
 
-    return pnl_perc
+    return list(df.index), pnl_perc
 
 
 def calc_cagr(pv_lst, timestamp_lst):
-    pnl_perc_ld = calc_freq_pnl(pv_lst, timestamp_lst, freq="1D")
+    _, pnl_perc_ld = calc_freq_pnl(pv_lst, timestamp_lst, freq="1D")
 
     temp = pv_lst[-1] / pv_lst[0]
 

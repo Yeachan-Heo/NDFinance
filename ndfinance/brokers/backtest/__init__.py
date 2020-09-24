@@ -14,15 +14,15 @@ class PortFolioLogLabel:
     leverage = "leverage"
     leverage_total = "leverage_total"
 
-    cash_weight = "cash_weight"
-    cash_weight_total = "cash_weight_total"
+    cash_weight_percentage = "cash_weight_percentage"
+    cash_weight_percentage_total = "cash_weight_percentage_total"
 
     unrealized_pnl_percentage = "unrealized_pnl_percentage"
     unrealized_pnl_percentage_total = "unrealized_pnl_percentage_total"
 
     lst = [portfolio_value_total, portfolio_value,
             leverage, leverage_total,
-            cash_weight, cash_weight_total,
+            cash_weight_percentage, cash_weight_percentage_total,
             unrealized_pnl_percentage, unrealized_pnl_percentage_total]
 
 
@@ -43,7 +43,7 @@ class BacktestPortfolio:
         self.log = LabeledScalarStorage(
             PortFolioLogLabel.portfolio_value_total, PortFolioLogLabel.portfolio_value,
             PortFolioLogLabel.leverage, PortFolioLogLabel.leverage_total,
-            PortFolioLogLabel.cash_weight, PortFolioLogLabel.cash_weight_total,
+            PortFolioLogLabel.cash_weight_percentage, PortFolioLogLabel.cash_weight_percentage_total,
             PortFolioLogLabel.unrealized_pnl_percentage, PortFolioLogLabel.unrealized_pnl_percentage_total,
             OHLCVT.timestamp
         )
@@ -67,8 +67,8 @@ class BacktestPortfolio:
         self.log.add_scalar(PortFolioLogLabel.leverage, self.leverage)
         self.log.add_scalar(PortFolioLogLabel.leverage_total, self.leverage_total)
 
-        self.log.add_scalar(PortFolioLogLabel.cash_weight, self.cash_weight)
-        self.log.add_scalar(PortFolioLogLabel.cash_weight_total, self.cash_weight_total)
+        self.log.add_scalar(PortFolioLogLabel.cash_weight_percentage, self.cash_weight_percentage)
+        self.log.add_scalar(PortFolioLogLabel.cash_weight_percentage_total, self.cash_weight_percentage_total)
 
         self.log.add_scalar(PortFolioLogLabel.unrealized_pnl_percentage, self.unrealized_pnl_percentage)
         self.log.add_scalar(PortFolioLogLabel.unrealized_pnl_percentage_total, self.unrealized_pnl_percentage_total)
@@ -93,8 +93,8 @@ class BacktestPortfolio:
         self.leverage = self.position_value / self.portfolio_value
         self.leverage_total = self.position_value / self.portfolio_value_total
 
-        self.cash_weight = (1 - self.leverage) * 100
-        self.cash_weight_total = (1 - self.leverage_total) * 100
+        self.cash_weight_percentage = (1 - self.leverage) * 100
+        self.cash_weight_percentage_total = (1 - self.leverage_total) * 100
 
         self.unrealized_pnl_percentage = self.unrealized_pnl / self.portfolio_value * 100
         self.unrealized_pnl_percentage_total = self.unrealized_pnl / self.portfolio_value_total * 100

@@ -27,11 +27,20 @@ class BacktestAnalyzer:
 
         if benchmark is None:
             benchmark = np.ones(shape=(len(self.log["timestamp"]),))
+            self.log["benchmark"] = benchmark
 
         self.result["CAGR"] = calc_cagr(self.log["portfolio_value_total"], self.log["timestamp"])
         self.result["MDD"] = -get_mdd(self.log["portfolio_value"])
 
         self.result["CAGR_MDD_ratio"] = self.result["CAGR"] / self.result["MDD"]
+
+        self.result["win_trade_count"] = len(filter_array(lambda x: x > 0, log["realized_pnl"]))
+        self.result["lose_trade_count"] = len(filter_array(lambda x: x < 0, log["realized_pnl"]))
+
+        self.result["total_trade_count"] = len(log["realized_pnl"])
+
+        self.result["win_rate_percentage"] = self.result["win_trade_count"] / self.result["total_trade_count"] * 100
+        self.result["lose_rate_percentage"] = self.result["lose_trade_count"] / self.result["total_trade_count"] * 100
 
         self.result["sharpe_ratio"], self.result["sortino_ratio"] = calc_sharpe_sortino_ratio(
             self.log["portfolio_value_total"], benchmark, self.log["timestamp"]
@@ -42,20 +51,20 @@ class BacktestAnalyzer:
         realized_win, realized_lose = \
             filter_array(lambda x: x > 0, realized_pnl), filter_array(lambda x: x < 0, realized_pnl)
 
-        pnl_percentage_sum = -realized_win.sum() / realized_lose.sum()
-        self.result["pnl_percentage_sum"] = pnl_percentage_sum
-        pnl_rate = -realized_win.mean() / realized_lose.mean()
-        self.result["pnl_rate"] = pnl_rate
+        pnl_ratio_sum = -realized_win.sum() / realized_lose.sum()
+        self.result["pnl_ratio_sum"] = pnl_ratio_sum
+        pnl_ratio = -realized_win.mean() / realized_lose.mean()
+        self.result["pnl_ratio"] = pnl_ratio
 
         [append_dict(self.result, amm(log[l], l)) for l in PnlLogLabel.lst]
         [append_dict(self.result, amm(log[l], l)) for l in PortFolioLogLabel.lst]
 
         append_dict(self.result, amm(calc_freq_pnl(
-            self.log["portfolio_value"], self.log["timestamp"], freq="1M")*100, label="1M_pnl_percentage"))
+            self.log["portfolio_value"], self.log["timestamp"], freq="1M")[-1]*100, label="1M_pnl_percentage"))
         append_dict(self.result, amm(calc_freq_pnl(
-            self.log["portfolio_value"], self.log["timestamp"], freq="1D")*100, label="1D_pnl_percentage"))
+            self.log["portfolio_value"], self.log["timestamp"], freq="1D")[-1]*100, label="1D_pnl_percentage"))
         append_dict(self.result, amm(calc_freq_pnl(
-            self.log["portfolio_value"], self.log["timestamp"], freq="7D")*100, label="1W_pnl_percentage"))
+            self.log["portfolio_value"], self.log["timestamp"], freq="7D")[-1]*100, label="1W_pnl_percentage"))
 
     def print(self):
         print("\n"*1)
