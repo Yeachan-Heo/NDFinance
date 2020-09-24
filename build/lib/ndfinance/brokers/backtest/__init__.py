@@ -224,8 +224,23 @@ class BacktestBroker(Broker):
 
     def _order_weight(self, order: Weight):
         if order.market:
-            return self._order_market(order.to_market(self.data_provider.current_price(order.asset.ticker)))
-        return self._order_limit(order.to_limit())
+            order = order.to_market(self.data_provider.current_price(order.asset.ticker))
+        else: order = order.to_limit()
+
+        if order.asset.ticker in self.portfolio.positions.keys():
+            position = self.portfolio.positions[order.asset.ticker]
+            current_amount = position.amount * position.side
+        else: current_amount = 0
+        
+        target_amount = order.amount * order.side
+
+        amount = (target_amount - current_amount)
+        amount, side = np.abs(amount), np.sign(amount)
+
+        order.amount = amount
+        order.side = side
+
+        return self._order(order)
 
     def _order_close(self, order: Close):
         if not order.asset.ticker in self.portfolio.positions.keys():

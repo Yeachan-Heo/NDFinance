@@ -3,10 +3,12 @@ from matplotlib.ticker import PercentFormatter
 from ndfinance.analysis.backtest.backtest_analysis import *
 from ndfinance.utils.array_utils import *
 from ndfinance.brokers.base import TimeFrames
+import warnings
 import ray
-plt.rcParams["font.size"] = 30
 
+warnings.filterwarnings("ignore")
 
+plt.rcParams["figure.max_open_warning"] = 100
 class Visualizer(object):
     def __init__(self):
         self.sys = None
@@ -113,7 +115,7 @@ class BacktestVisualizer(Visualizer):
         self.gs = plt.GridSpec(nrows=5, ncols=2, height_ratios=np.array([1, 0.25, 0.25, 0.25, 0.25]) * 2)
         self.plot_main()
         self.plot_bars()
-        self.plot_histogram()
+        self.plot_hist()
         self.plot_rolling(rolling_period)
         self.fig.show()
         return self.fig
@@ -222,9 +224,12 @@ class BasicVisualizer(Visualizer):
     def __init__(self):
         super(BasicVisualizer, self).__init__()
 
-    def plot_histogram(self, y, label, xlabel="", ylabel="", fig=plt.figure(), subplot_loc=111,
-                       cmap=plt.cm.viridis, bins_coeff=5, align=True, *args, **kwargs):
+    def plot_hist(self, y, label, xlabel="", ylabel="", fig=None, subplot_loc=111,
+                       cmap=plt.cm.viridis, bins_coeff=1, align=False, *args, **kwargs):
         fig = fig
+
+        if fig is None:
+            fig = plt.figure()
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -239,13 +244,18 @@ class BasicVisualizer(Visualizer):
         else:
             n, b, p = ax.hist(y, label=label, *args, **kwargs)
 
+        ax.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
+        
         set_colormap(p, cm=cmap)
 
         ax.legend()
         return fig
 
-    def plot_line(self, x, y, label, xlabel="", ylabel="", color="#000000", fig=plt.figure(), subplot_loc=111, *args, **kwargs):
+    def plot_line(self, x, y, label, xlabel="", ylabel="", color="#000000", fig=None, subplot_loc=111, *args, **kwargs):
         fig = fig
+
+        if fig is None:
+            fig = plt.figure()
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -258,8 +268,12 @@ class BasicVisualizer(Visualizer):
 
         return fig
 
-    def plot_bar(self, x, y, label, xlabel="", ylabel="", fig=plt.figure(), subplot_loc=111, *args, **kwargs):
+    def plot_bar(self, x, y, label, xlabel="", ylabel="", fig=None, subplot_loc=111, xtick_n=6, *args, **kwargs):
+        x, y = np.array(x), np.array(y)
         fig = fig
+
+        if fig is None:
+            fig = plt.figure()
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -270,29 +284,28 @@ class BasicVisualizer(Visualizer):
 
         idxs = np.arange(len(y))
         plus_idx = np.where(y >= 0)
-        minus_idx = np.where(x < 0)
+        minus_idx = np.where(y < 0)
 
         ax.bar(idxs[plus_idx], y[plus_idx], color="g")
-        ax.bar(idxs[minus_idx], y[minus_idx], color="g")
+        ax.bar(idxs[minus_idx], y[minus_idx], color="r")
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
-        ax.legend()
+        ax.set_xticklabels(np.arange(0, len(x), step=len(x) // xtick_n))
 
         return fig
 
     def plot_log(self, log, rolling_period=TimeFrames.day*365):
-        timestamp_lst, mdd = get_rolling_mdd(log["portfolio_value"], log["timestamp"], period=rolling_period)
-        timestamp_lst, cagr = get_rolling_cagr(log["portfolio_value"], log["timestamp"], period=rolling_period)
-        timestamp_lst, sharpe, sortino = get_rolling_sharpe_sortino_ratio(
-            log["portfolio_value"], log["benchmark"], log["timestamp_lst"], period=rolling_period
+        mdd_timestamp_lst, mdd = get_rolling_mdd(log["portfolio_value"], log["timestamp"], period=rolling_period)
+        cagr_timestamp_lst, cagr = get_rolling_cagr(log["portfolio_value"], log["timestamp"], period=rolling_period)
+        sortino_timestamp_lst, sharpe, sortino = get_rolling_sharpe_sortino_ratio(
+            log["portfolio_value"], log["benchmark"], log["timestamp"], period=rolling_period
         )
-        timestamp_lst, pnl_ratio = \
+        pnl_timestamp_lst, pnl_ratio = \
             get_rolling_pnl_ratio(log["portfolio_value"], log["timestamp"], period=rolling_period)
 
         self.rolling_dict = {
-            "timestamp" : timestamp_lst,
             "mdd" : mdd,
             "cagr": cagr,
             "sharpe": sharpe,
@@ -304,23 +317,23 @@ class BasicVisualizer(Visualizer):
 
         self.fig_dict = {
             "mdd": self.plot_line(
-                self.rolling_dict["timestamp"], self.rolling_dict["mdd"],
+                mdd_timestamp_lst, self.rolling_dict["mdd"],
                 label="MDD(%)", xlabel="date", ylabel="MDD(%)"
             ),
             "cagr": self.plot_line(
-                self.rolling_dict["timestamp"], self.rolling_dict["cagr"],
+                cagr_timestamp_lst, self.rolling_dict["cagr"],
                 label="CAGR(%)", xlabel="date", ylabel="CAGR(%)"
             ),
             "sharpe": self.plot_line(
-                self.rolling_dict["timestamp"], self.rolling_dict["sharpe"],
+                sortino_timestamp_lst, self.rolling_dict["sharpe"],
                 label="sharpe", xlabel="date", ylabel="sharpe"
             ),
             "sortino": self.plot_line(
-                self.rolling_dict["timestamp"], self.rolling_dict["sortino"],
+                sortino_timestamp_lst, self.rolling_dict["sortino"],
                 label="sortino", xlabel="date", ylabel="sortino"
             ),
             "pnl_ratio": self.plot_line(
-                self.rolling_dict["timestamp"], self.rolling_dict["pnl_ratio"],
+                pnl_timestamp_lst, self.rolling_dict["pnl_ratio"],
                 label="P/L Ratio", xlabel="date", ylabel="P/L Ratio"
             ),
             "portfolio_value":self.plot_line(
@@ -339,51 +352,21 @@ class BasicVisualizer(Visualizer):
                 log["datetime"], log["portfolio_value_total"] / log["portfolio_value_total"][0],
                 label="portfolio_value_total", xlabel="date", ylabel="cumulative p&L(%)"
             ),
-            "cash_weight_percentage" : self.plot_line(
-                log["datetime"], log["cash_weight_percentage"],
-                label="cash weight", xlabel="date", ylabel="cash weight(%)"
-            ),
-            "cash_weight_percentage_total": self.plot_line(
-                log["datetime"], log["cash_weight_percentage_total"],
-                label="cash weight(total pv)", xlabel="date", ylabel="cash weight(%)"
-            ),
-            "cash_weight_percentage_hist": self.plot_hist(
-                log["cash_weight_percentage"],
-                label="cash weight", xlabel="date", ylabel="cash weight(%)", align=False,
-            ),
-            "cash_weight_percentage_total_hist": self.plot_hist(
-                log["cash_weight_percentage_total"],
-                label="cash weight(total pv)", xlabel="date", ylabel="weight(%)", align=False
-            ),
-            "leverage" : self.plot_line(
-                log["datetime"], log["leverage"],
-                label="leverage", xlabel="date", ylabel="leverage(x)"
-            ),
-            "leverage_total": self.plot_line(
-                log["datetime"], log["leverage"],
-                label="leverage(total pv)", xlabel="date", ylabel="leverage(x)"
-            ),
-            "leverage_hist": self.plot_histogram(
-                log["leverage"], label="leverage", xlabel="leverage(x)", ylabel="weight(%)", align=False
-            ),
-            "leverage_total_hist": self.plot_histogram(
-                log["leverage"], label="leverage(total pv)", xlabel="leverage(x)", ylabel="weight(%)", align=False
-            ),
-            "realized_pnl_percentage_hist": self.plot_histogram(
+            "realized_pnl_percentage_hist": self.plot_hist(
                 log["realized_pnl_percentage"], label="realized P&L", xlabel="P&L(%)", ylabel="weight(%)"
             ),
-            "realized_pnl_percentage_weighted_hist": self.plot_histogram(
+            "realized_pnl_percentage_weighted_hist": self.plot_hist(
                 log["realized_pnl_percentage_weighted"], label="realized P&L weighted", xlabel="P&L(%)", ylabel="weight(%)"
             ),
-            "1M_pnl_hist" : self.plot_histogram(
+            "1M_pnl_hist" : self.plot_hist(
                 calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1M")[-1]*100,
                 label="1M P&L", xlabel="P&L(%)", ylabel="weight(%)"
             ),
-            "1D_pnl_hist": self.plot_histogram(
+            "1D_pnl_hist": self.plot_hist(
                 calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1D")[-1] * 100,
                 label="1D P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
             ),
-            "1W_pnl_hist": self.plot_histogram(
+            "1W_pnl_hist": self.plot_hist(
                 calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1W")[-1] * 100,
                 label="1W P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
             ),
@@ -400,6 +383,13 @@ class BasicVisualizer(Visualizer):
                 label="1W P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
             ),
         }
+    def export_figures(self, path="./bt_results/"):
+        path = path + "/plot/"
+        if not os.path.exists(path):
+            os.makedirs(path)
+        for key, value in self.fig_dict.items():
+            value.savefig(path + key + ".png")
+            del value
 
 
 

@@ -35,6 +35,7 @@ ndfinance/loggers/__init__.py
 ndfinance/loggers/backtest/__init__.py
 ndfinance/strategies/__init__.py
 ndfinance/strategies/basic/__init__.py
+ndfinance/strategies/trend/__init__.py
 ndfinance/utils/__init__.py
 ndfinance/utils/array_utils.py
 ndfinance/visualizers/__init__.py

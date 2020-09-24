@@ -22,7 +22,7 @@ def make_benchmark(data_provider, from_timestamp, to_timestamp, *args):
 def get_rolling_mdd(pv_lst, timestamp_lst, period):
     window_size = get_rolling_window_size(timestamp_lst, period)
     timestamp_lst = to_datetime(rolling_window(timestamp_lst, window_size, lambda x: x[-1]))
-    mdd_lst = rolling_window(pv_lst, window_size, lambda x: -get_mdd(x)[-1] * 100)
+    mdd_lst = rolling_window(pv_lst, window_size, lambda x: -get_mdd(x))
     mdd_lst = np.array(mdd_lst)
     return timestamp_lst, mdd_lst
 
@@ -42,6 +42,7 @@ def get_rolling_pnl_ratio(pv_lst, timestamp_lst, period):
     cagr_lst = rolling_window(pv_lst, window_size, lambda x: -x[np.where(x > 0)].mean() / x[np.where(x<0)].mean())
     cagr_lst = np.array(cagr_lst)
     return to_datetime(timestamp_lst), cagr_lst
+
 
 def get_rolling_sharpe_sortino_ratio(pv_lst, benchmark_lst, timestamp_lst, period):
     index = pd.DatetimeIndex([

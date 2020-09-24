@@ -3,12 +3,12 @@ from ndfinance.core import BacktestEngine
 from ndfinance.analysis.backtest.analyzer import BacktestAnalyzer
 from ndfinance.analysis.technical import RateOfChange
 from ndfinance.visualizers.backtest_visualizer import BasicVisualizer
-from ndfinance.strategies.basic import SameWeightBuyHold
+from ndfinance.strategies.trend import ActualMomentumStratagy
 import matplotlib.pyplot as plt
 
 
 def main(tickers, **kwargs):
-    path="./bt_results/same_weight_bnh/"
+    path="./bt_results/actualmomentum/"
     dp = BacktestDataProvider()
     dp.add_yf_tickers(*tickers)
     dp.add_technical_indicators(tickers, [TimeFrames.day], [RateOfChange(20)])
@@ -19,7 +19,11 @@ def main(tickers, **kwargs):
     brk = BacktestBroker(dp, initial_margin=10000)
     [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
 
-    strategy = SameWeightBuyHold()
+    strategy = ActualMomentumStratagy(
+        momentum_threshold=1, 
+        rebalance_period=TimeFrames.day*30,
+        momentum_label="ROCR20",
+    )
 
     engine = BacktestEngine()
     engine.register_broker(brk)

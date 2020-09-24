@@ -3,12 +3,13 @@ from ndfinance.analysis.technical import TechnicalIndicator
 from ndfinance.brokers.base import TimeIndexer
 from ndfinance.utils import array_utils
 from ndfinance.brokers.base import TimeFrames, asset
+import yfinance as yf
 import pandas as pd
 import numpy as np
 
 
 class BacktestDataProvider(DataProvider):
-    def __init__(self, primary_timeframe=TimeFrames.minute):
+    def __init__(self, primary_timeframe=TimeFrames.day):
         super(BacktestDataProvider, self).__init__()
         self.f = array_utils.StructureDataset()
 
@@ -21,7 +22,7 @@ class BacktestDataProvider(DataProvider):
                            df:pd.DataFrame,
                            ticker:str,
                            datetime_format="%Y-%m-%d %H:%M:%S",
-                           timeframe=TimeFrames.minute,
+                           timeframe=TimeFrames.day,
                            timestamp=OHLCVT.timestamp,
                            open=OHLCVT.open, high=OHLCVT.high,
                            low=OHLCVT.low, close=OHLCVT.close,
@@ -45,7 +46,7 @@ class BacktestDataProvider(DataProvider):
                            dataframes_or_paths,
                            tickers,
                            datetime_format="%Y-%m-%d %H:%M:%S",
-                           timeframe=TimeFrames.minute,
+                           timeframe=TimeFrames.day,
                            timestamp=OHLCVT.timestamp,
                            open=OHLCVT.open, high=OHLCVT.high,
                            low=OHLCVT.low, close=OHLCVT.close,
@@ -121,6 +122,16 @@ class BacktestDataProvider(DataProvider):
                 timeframe = self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]
                 timeframe_len = len(timeframe)
         return timeframe
+
+    def _add_yf_ticker(self, ticker):
+        hist = yf.Ticker(ticker).history(period="max")
+        hist.columns = [a.lower() for a in hist.columns]
+        hist["timestamp"] = [str(a) for a in hist.index]
+        self.add_ohlc_dataframe(hist, ticker=ticker)
+
+    def add_yf_tickers(self, *tickers):
+        for ticker in tickers:
+            self._add_yf_ticker(ticker)
 
 
 

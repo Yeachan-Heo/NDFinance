@@ -9,7 +9,7 @@ setup(
               'ndfinance.brokers.base', 'ndfinance.brokers.backtest', 'ndfinance.loggers', 'ndfinance.loggers.backtest',
               'ndfinance.analysis', 'ndfinance.analysis.backtest', 'ndfinance.analysis.technical',
               'ndfinance.analysis.machine_learning', 'ndfinance.analysis.machine_learning.rl_envs',
-              'ndfinance.callbacks', 'ndfinance.strategies', 'ndfinance.strategies.basic', 'ndfinance.visualizers'],
+              'ndfinance.callbacks', 'ndfinance.strategies', 'ndfinance.strategies.basic', 'ndfinance.strategies.trend', 'ndfinance.visualizers'],
     url='',
     license='',
     author='Yeachan-Heo',

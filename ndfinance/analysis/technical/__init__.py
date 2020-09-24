@@ -40,3 +40,13 @@ class SimpleMovingAverage(TechnicalIndicator):
         return ta.SMA(data["close"], timeperiod=self.period)
 
 
+class RateOfChange(TechnicalIndicator):
+    def __init__(self, period):
+        self.period = period
+        super(RateOfChange, self).__init__()
+    
+    def make_name(self) -> str:
+        return f"ROCR{self.period}"
+
+    def __call__(self, data:np.ndarray):
+        return (ta.ROCR(data["close"], timeperiod=self.period)-1)*100

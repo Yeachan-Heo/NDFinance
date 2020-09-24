@@ -73,11 +73,20 @@ class BacktestAnalyzer:
             print(f"{key}:{round(value, 3)}")
 
     def export_result(self, path="./bt_result/", name="result.json"):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        print("saving result to: ", path + name)
         with open(path + name, "w") as f:
             f.write(json.dumps(self.result))
 
     def export_log(self, path="./bt_result/", name="log.csv"):
-        pd.DataFrame(self.log).to_csv(path + name)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        df = pd.DataFrame()
+        for key, value in df:
+            df[key] = value
+        print("saving log to: ", path + name)
+        df.to_csv(path + name)
 
 
 
