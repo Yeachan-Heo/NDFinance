@@ -244,7 +244,7 @@ class BasicVisualizer(Visualizer):
         else:
             n, b, p = ax.hist(y, label=label, *args, **kwargs)
 
-        ax.yaxis.set_major_formatter(PercentFormatter(xmax=sum(n)))
+        ax.yaxis.set_major_formatter(PercentFormatter(xmax=np.clip(sum(n), 1, np.inf)))
         
         set_colormap(p, cm=cmap)
 
@@ -341,7 +341,7 @@ class BasicVisualizer(Visualizer):
                 label="portfolio_value", xlabel="date", ylabel="portfolio value"
             ),
             "portfolio_value_cum_pnl_perc" : self.plot_line(
-                log["datetime"], log["portfolio_value"] / log["portfolio_value"][0],
+                log["datetime"], (log["portfolio_value"] / log["portfolio_value"][0] - 1)*100,
                 label="portfolio_value", xlabel="date", ylabel="cumulative p&L(%)"
             ),
             "portfolio_value_total": self.plot_line(
@@ -349,7 +349,7 @@ class BasicVisualizer(Visualizer):
                 label="portfolio_value_total", xlabel="date", ylabel="portfolio value"
             ),
             "portfolio_value_total_cum_pnl_perc": self.plot_line(
-                log["datetime"], log["portfolio_value_total"] / log["portfolio_value_total"][0],
+                log["datetime"], (log["portfolio_value_total"] / log["portfolio_value_total"][0] - 1)*100,
                 label="portfolio_value_total", xlabel="date", ylabel="cumulative p&L(%)"
             ),
             "realized_pnl_percentage_hist": self.plot_hist(

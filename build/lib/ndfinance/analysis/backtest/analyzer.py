@@ -9,7 +9,9 @@ import json
 import os
 
 
-def amm(array, label):
+def amm(array:np.ndarray, label):
+    if len(array) == 0:
+        array = np.zeros(1)
     return {
         f"average_{label}": array.mean(),
         f"max_{label}": array.max(),
@@ -39,8 +41,8 @@ class BacktestAnalyzer:
 
         self.result["total_trade_count"] = len(log["realized_pnl"])
 
-        self.result["win_rate_percentage"] = self.result["win_trade_count"] / self.result["total_trade_count"] * 100
-        self.result["lose_rate_percentage"] = self.result["lose_trade_count"] / self.result["total_trade_count"] * 100
+        self.result["win_rate_percentage"] = self.result["win_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100
+        self.result["lose_rate_percentage"] = self.result["lose_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100
 
         self.result["sharpe_ratio"], self.result["sortino_ratio"] = calc_sharpe_sortino_ratio(
             self.log["portfolio_value_total"], benchmark, self.log["timestamp"]

@@ -29,7 +29,8 @@ class PositionWeightPrinterCallback(Callback):
         weight = value/value.sum()
 
         for k, w in zip(self.broker.portfolio.positions.keys(), weight):
-            print(f"{k}:{np.round(w*100, 2)}%")
+            side = "sell" if self.broker.portfolio.positions[k].side == -1 else "buy"
+            print(f"{k}:{np.round(w*100, 2)}%, side:{side}")
 
         print("\n")
 

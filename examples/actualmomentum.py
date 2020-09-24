@@ -4,6 +4,7 @@ from ndfinance.analysis.backtest.analyzer import BacktestAnalyzer
 from ndfinance.analysis.technical import RateOfChange
 from ndfinance.visualizers.backtest_visualizer import BasicVisualizer
 from ndfinance.strategies.trend import ActualMomentumStratagy
+from ndfinance.callbacks import PositionWeightPrinterCallback
 import matplotlib.pyplot as plt
 
 
@@ -11,7 +12,8 @@ def main(tickers, **kwargs):
     path="./bt_results/actualmomentum/"
     dp = BacktestDataProvider()
     dp.add_yf_tickers(*tickers)
-    dp.add_technical_indicators(tickers, [TimeFrames.day], [RateOfChange(20)])
+    n = 50
+    dp.add_technical_indicators(tickers, [TimeFrames.day], [RateOfChange(n)])
 
     indexer = TimeIndexer(dp.get_shortest_timestamp_seq())
     dp.set_indexer(indexer)
@@ -20,14 +22,15 @@ def main(tickers, **kwargs):
     [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
 
     strategy = ActualMomentumStratagy(
-        momentum_threshold=1, 
+        momentum_threshold=5, 
         rebalance_period=TimeFrames.day*30,
-        momentum_label="ROCR20",
+        momentum_label=f"ROCR{n}",
     )
 
     engine = BacktestEngine()
     engine.register_broker(brk)
     engine.register_strategy(strategy)
+    engine.register_callback(PositionWeightPrinterCallback())
 
     log = engine.run()
     
