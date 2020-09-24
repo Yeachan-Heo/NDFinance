@@ -141,8 +141,8 @@ class PnlLogLabel:
 
 class BacktestBroker(Broker):
     def __init__(self,
-                 withdraw_config: WithDrawConfig,
-                 data_provider: Optional[BacktestDataProvider] = None,
+                 data_provider: BacktestDataProvider,
+                 withdraw_config: WithDrawConfig = WithDrawConfig(use=False),
                  initial_margin: float = 1e+7):
 
         super(BacktestBroker, self).__init__(data_provider, withdraw_config)
@@ -224,8 +224,19 @@ class BacktestBroker(Broker):
 
     def _order_weight(self, order: Weight):
         if order.market:
-            return self._order_market(order.to_market(self.data_provider.current_price(order.asset.ticker)))
-        return self._order_limit(order.to_limit())
+            order = order.to_market(self.data_provider.current_price(order.asset.ticker))
+        else: order = order.to_limit()
+
+        if self.order.asset.ticker in self.portfolio.positions.keys():
+            position = self.portfolio.positions[self.order.asset.ticker]
+            current_amount = position.amount * position.side
+        target_amount = order.amount * order.side
+
+        amount = np.abs(target_amount - current_amount)
+
+        order.amount = amount
+
+        self.order(order)
 
     def _order_close(self, order: Close):
         if not order.asset.ticker in self.portfolio.positions.keys():

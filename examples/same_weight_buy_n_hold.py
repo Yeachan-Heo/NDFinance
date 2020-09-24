@@ -1,6 +1,7 @@
 from ndfinance.brokers.backtest import *
 from ndfinance.core import BacktestEngine
 from ndfinance.analysis.backtest.analyzer import BacktestAnalyzer
+from ndfinance.visualizers.backtest_visualizer import BasicVisualizer
 from ndfinance.strategies.basic import SameWeightBuyHold
 import matplotlib.pyplot as plt
 
@@ -12,7 +13,7 @@ def main(data_paths, tickers, **kwargs):
     indexer = TimeIndexer(dp.get_shortest_timestamp_seq())
     dp.set_indexer(indexer)
 
-    brk = BacktestBroker(WithDrawConfig(use=False), dp, initial_margin=10000)
+    brk = BacktestBroker(dp, initial_margin=10000)
     [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
 
     strategy = SameWeightBuyHold()
@@ -25,6 +26,9 @@ def main(data_paths, tickers, **kwargs):
 
     analyzer = BacktestAnalyzer(log)
     analyzer.print()
+
+    visualizer = BasicVisualizer()
+    visualizer.plot_log(log)
 
     plt.plot(log["portfolio_value"] / log["portfolio_value"][0])
     plt.show()

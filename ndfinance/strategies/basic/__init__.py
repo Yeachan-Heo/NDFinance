@@ -6,7 +6,7 @@ class SameWeightBuyHold(Strategy):
         super(SameWeightBuyHold, self).__init__()
         self.ordered = False
 
-    def logic(self):
+    def _logic(self):
         if not self.ordered:
             weight = 1 / len(self.broker.assets)
             [self.broker.order(order.Weight(asset, self.broker.portfolio.portfolio_value, 1, weight))
