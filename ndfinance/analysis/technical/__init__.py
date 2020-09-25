@@ -1,5 +1,6 @@
 import numpy as np
 from talib import abstract as ta
+from ndfinance.brokers.base.data_provider import OHLCVT
 
 def TA_BBANDS(prices:np.ndarray,
               timeperiod:int=5,
@@ -37,7 +38,7 @@ class SimpleMovingAverage(TechnicalIndicator):
         return f"SMA{self.period}"
 
     def __call__(self, data:np.ndarray):
-        return ta.SMA(data["close"], timeperiod=self.period)
+        return ta.SMA(data[OHLCVT.close], timeperiod=self.period)
 
 
 class RateOfChange(TechnicalIndicator):
@@ -49,4 +50,4 @@ class RateOfChange(TechnicalIndicator):
         return f"ROCR{self.period}"
 
     def __call__(self, data:np.ndarray):
-        return (ta.ROCR(data["close"], timeperiod=self.period)-1)*100
+        return (ta.ROCR(data[OHLCVT.close], timeperiod=self.period)-1)*100

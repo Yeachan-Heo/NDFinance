@@ -6,9 +6,12 @@ from ndfinance.brokers.base import TimeFrames
 import warnings
 import ray
 
+
 warnings.filterwarnings("ignore")
 
-plt.rcParams["figure.max_open_warning"] = 100
+plt.style.use("seaborn")
+plt.rcParams["font.size"] = 20
+
 class Visualizer(object):
     def __init__(self):
         self.sys = None
@@ -225,11 +228,11 @@ class BasicVisualizer(Visualizer):
         super(BasicVisualizer, self).__init__()
 
     def plot_hist(self, y, label, xlabel="", ylabel="", fig=None, subplot_loc=111,
-                       cmap=plt.cm.viridis, bins_coeff=1, align=False, *args, **kwargs):
+                       cmap=plt.cm.viridis, bins_coeff=1, align=False, figsize=(20, 10), *args, **kwargs):
         fig = fig
 
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(figsize=figsize, *args, **kwargs)
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -251,11 +254,11 @@ class BasicVisualizer(Visualizer):
         ax.legend()
         return fig
 
-    def plot_line(self, x, y, label, xlabel="", ylabel="", color="#000000", fig=None, subplot_loc=111, *args, **kwargs):
+    def plot_line(self, x, y, label, xlabel="", ylabel="", color="#000000", fig=None, subplot_loc=111, figsize=(20, 10), *args, **kwargs):
         fig = fig
 
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(figsize=figsize, *args, **kwargs)
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -268,12 +271,12 @@ class BasicVisualizer(Visualizer):
 
         return fig
 
-    def plot_bar(self, x, y, label, xlabel="", ylabel="", fig=None, subplot_loc=111, xtick_n=6, *args, **kwargs):
+    def plot_bar(self, x, y, label, xlabel="", ylabel="", fig=None, subplot_loc=111, xtick_n=6, figsize=(20, 10), *args, **kwargs):
         x, y = np.array(x), np.array(y)
         fig = fig
 
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(figsize=figsize, *args, **kwargs)
 
         ax = fig.add_subplot(subplot_loc)
 
@@ -292,7 +295,7 @@ class BasicVisualizer(Visualizer):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
-        ax.set_xticklabels(np.arange(0, len(x), step=len(x) // xtick_n))
+        ax.set_xticklabels(x[np.arange(0, len(x), step=len(x) // xtick_n)])
 
         return fig
 
@@ -302,18 +305,16 @@ class BasicVisualizer(Visualizer):
         sortino_timestamp_lst, sharpe, sortino = get_rolling_sharpe_sortino_ratio(
             log["portfolio_value"], log["benchmark"], log["timestamp"], period=rolling_period
         )
-        pnl_timestamp_lst, pnl_ratio = \
-            get_rolling_pnl_ratio(log["portfolio_value"], log["timestamp"], period=rolling_period)
 
         self.rolling_dict = {
             "mdd" : mdd,
             "cagr": cagr,
             "sharpe": sharpe,
             "sortino": sortino,
-            "pnl_ratio" : pnl_ratio
         }
 
         log["datetime"] = to_datetime(log["timestamp"])
+        log["datetime_str"] = [str(x)[:7] for x in log["datetime"]]
 
         self.fig_dict = {
             "mdd": self.plot_line(
@@ -331,10 +332,6 @@ class BasicVisualizer(Visualizer):
             "sortino": self.plot_line(
                 sortino_timestamp_lst, self.rolling_dict["sortino"],
                 label="sortino", xlabel="date", ylabel="sortino"
-            ),
-            "pnl_ratio": self.plot_line(
-                pnl_timestamp_lst, self.rolling_dict["pnl_ratio"],
-                label="P/L Ratio", xlabel="date", ylabel="P/L Ratio"
             ),
             "portfolio_value":self.plot_line(
                 log["datetime"], log["portfolio_value"],
@@ -371,24 +368,27 @@ class BasicVisualizer(Visualizer):
                 label="1W P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
             ),
             "1M_pnl_bar" : self.plot_bar(
-                log["datetime"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1M")[-1]*100,
-                label="1M P&L", xlabel="P&L(%)", ylabel="weight(%)"
+                log["datetime_str"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1M")[-1]*100,
+                label="1M P&L", xlabel="date", ylabel="P&L(%)"
             ),
-            "1D_pnl_hist": self.plot_bar(
-                log["datetime"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1D")[-1] * 100,
-                label="1D P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
+            "1D_pnl_bar": self.plot_bar(
+                log["datetime_str"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1D")[-1] * 100,
+                label="1D P&L(%)",  xlabel="date", ylabel="P&L(%)"
             ),
-            "1W_pnl_hist": self.plot_bar(
-                log["datetime"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1W")[-1] * 100,
-                label="1W P&L(%)", xlabel="P&L(%)", ylabel="weight(%)"
+            "1W_pnl_bar": self.plot_bar(
+                log["datetime_str"], calc_freq_pnl(log["portfolio_value"], log["timestamp"], "1W")[-1] * 100,
+                label="1W P&L(%)",  xlabel="date", ylabel="P&L(%)"
             ),
         }
-    def export_figures(self, path="./bt_results/"):
-        path = path + "/plot/"
+    def export(self, path="./bt_results/", dpi=100, **export_kwargs):
+        print("\n")
+        print("-"*50, "[EXPORTING FIGURES]", "-"*50)
+        path = path + "plot/"
         if not os.path.exists(path):
             os.makedirs(path)
         for key, value in self.fig_dict.items():
-            value.savefig(path + key + ".png")
+            print("exporting figure to: ", path + key + ".png")
+            value.savefig(path + key + ".png", dpi=100, **export_kwargs)
             del value
 
 

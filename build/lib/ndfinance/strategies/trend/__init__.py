@@ -2,7 +2,7 @@ from ndfinance.strategies import PeriodicRebalancingStrategy
 from ndfinance.strategies.utils import apply_n_percent_rule
 from ndfinance import Weight, Close
 import numpy as np
-
+from pprint import pprint as print
 
 class ActualMomentumStratagy(PeriodicRebalancingStrategy):
     def __init__(self, momentum_threshold, rebalance_period, momentum_label="momentum", momentum_timeframe=None, clip_param=0.3):
@@ -27,15 +27,15 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
 
         momentum_dict = {ticker : (m if np.abs(m) >= self.momentum_threshold else 0) for ticker, m in momentum.items()}
         momentum_values = np.array(list(momentum_dict.values()))
-
-        momentum_values = momentum_values * (momentum_values >= momentum_values.mean()/2).astype(float)
         
         momentum_values = np.clip(
             momentum_values, 
             momentum_values.mean()-momentum_values.std()*self.clip_param, 
             momentum_values.mean()+momentum_values.std()*self.clip_param
         )
-
+        if np.abs(momentum_values).sum() == 0:
+            momentum_values += 1e+10
+            
         weight = momentum_values / np.abs(momentum_values).sum()
         side = (weight > 0).astype(int) * 2 - 1
 

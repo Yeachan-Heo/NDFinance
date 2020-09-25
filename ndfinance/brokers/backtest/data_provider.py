@@ -11,10 +11,10 @@ import numpy as np
 class BacktestDataProvider(DataProvider):
     def __init__(self, primary_timeframe=TimeFrames.day):
         super(BacktestDataProvider, self).__init__()
-        self.f = array_utils.StructureDataset()
+        self.root = array_utils.StructureDataset()
 
-        self.group_ohlcv = self.f.create_group("ohlcv")
-        self.group_fundamental = self.f.create_group("fundamental")
+        self.group_ohlcv = self.root.create_group("ohlcv")
+        self.group_fundamental = self.root.create_group("fundamental")
 
         self.primary_timeframe = primary_timeframe
 
@@ -133,6 +133,13 @@ class BacktestDataProvider(DataProvider):
         for ticker in tickers:
             self._add_yf_ticker(ticker)
 
+    def cut_data(self, slip=2):
+        for ticker, timeframe_grp in self.group_ohlcv.items():
+            for timeframe, label_grp in timeframe_grp.items():
+                timestamp = self.group_ohlcv[ticker][timeframe][OHLCVT.timestamp]
+                index = np.where((timestamp >= self.indexer.first_timestamp) & (timestamp <= self.indexer.last_timestamp))[-1]
+                for label, array in label_grp.items():
+                    self.group_ohlcv[ticker][timeframe][label] = self.group_ohlcv[ticker][timeframe][label][int(np.clip(index[0]-slip, 0, np.inf)):int(index[-1])]
 
 
 

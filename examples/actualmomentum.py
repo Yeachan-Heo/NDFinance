@@ -8,56 +8,52 @@ from ndfinance.callbacks import PositionWeightPrinterCallback
 import matplotlib.pyplot as plt
 
 
-def main(tickers, **kwargs):
+def main(tickers, paths=None, n=200, **kwargs):
     path="./bt_results/actualmomentum/"
     dp = BacktestDataProvider()
-    dp.add_yf_tickers(*tickers)
-    n = 50
+    if path is None:
+        dp.add_yf_tickers(*tickers)
+    else:
+        dp.add_ohlc_dataframes(paths, tickers)
     dp.add_technical_indicators(tickers, [TimeFrames.day], [RateOfChange(n)])
 
     indexer = TimeIndexer(dp.get_shortest_timestamp_seq())
     dp.set_indexer(indexer)
+    dp.cut_data()
 
     brk = BacktestBroker(dp, initial_margin=10000)
     [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
 
     strategy = ActualMomentumStratagy(
-        momentum_threshold=5, 
-        rebalance_period=TimeFrames.day*30,
+        momentum_threshold=1, 
+        rebalance_period=TimeFrames.day,
         momentum_label=f"ROCR{n}",
     )
 
     engine = BacktestEngine()
     engine.register_broker(brk)
     engine.register_strategy(strategy)
-    engine.register_callback(PositionWeightPrinterCallback())
+    #engine.register_callback(PositionWeightPrinterCallback())
 
     log = engine.run()
     
     analyzer = BacktestAnalyzer(log)
     analyzer.print()
-    analyzer.export_log(path=path)
-    analyzer.export_result(path=path)
-    
-    from pprint import pprint as print 
+    analyzer.export(path=path)
 
     visualizer = BasicVisualizer()
     visualizer.plot_log(log)
 
-    visualizer.export_figures(path=path)
+    visualizer.export(path=path)
 
 if __name__ == '__main__':
     main(
         [
-            "AAPL",
-            "FB",
-            "NFLX",
-            "GOOGL",
-            "NVDA",
-            "TSLA",
-            "AMZN",
-            "TWTR",
-            "BIDU",
-            "BABA"
+            "XBTUSD",
+            "ETHUSD"
+        ],
+        [
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1T/XBTUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1T/ETHUSD.csv"
         ]
     )

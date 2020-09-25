@@ -43,12 +43,20 @@ class Market(Order):
         self.amount = amount
         self.side = side
 
+    def __str__(self):
+        side = "buy" if self.side == OrderSide.buy else "sell"
+        return f"type:{self.type},ticker:{self.ticker},amount:{self.amount},side:{self.side}"
 
-class Limit(Market):
+class Limit(Order):
     def __init__(self, asset, amount, side, price):
-        super(Limit, self).__init__(asset, amount, side)
-        self.type = OrderTypes.limit
+        super(Limit, self).__init__(OrderTypes.limit, asset)
+        self.side = side
         self.price = price
+        self.amount = amount
+    
+    def __str__(self):
+        side = "buy" if self.side == OrderSide.buy else "sell"
+        return f"type:{self.type},ticker:{self.ticker},amount:{self.amount},side:{self.side},price:{self.price}"
 
 
 class Close(Order):
@@ -56,6 +64,11 @@ class Close(Order):
         super(Close, self).__init__(OrderTypes.close, asset)
         self.market = market
         self.price = price
+
+    def __str__(self):
+        side = "buy" if self.side == OrderSide.buy else "sell"
+        return f"type:{self.type},ticker:{self.ticker},market:{self.market},price:{self.price}"
+
 
 class Weight(Order):
     def __init__(self, asset, value, side, weight=1, market=True, price=None):
@@ -70,6 +83,10 @@ class Weight(Order):
                 "if you're placing an limit order by setting(market=False), you have to set up the limit price")
         super(Weight, self).__init__(OrderTypes.weight, asset)
     
+    def __str__(self):
+        side = "buy" if self.side == OrderSide.buy else "sell"
+        return f"type:{self.type},ticker:{self.ticker},value:{self.value},weight:{self.weight},side:{self.side},market:{self.market},price:{self.price}"
+
     def get_amount(self, price):
         amount = (self.weightvalue / price) // \
                              self.asset.min_amount * self.asset.min_amount
@@ -94,5 +111,10 @@ class TimeCutClose(Order):
         else:
             self.timestamp = (datetime.datetime.fromtimestamp(timestamp)
                           + relativedelta(**delta_kwargs)).timestamp()
+
+    def __str__(self):
+        side = "buy" if self.side == OrderSide.buy else "sell"
+        return f"type:{self.type},ticker:{self.ticker},timestamp:{self.timestamp}"
+
         
         

@@ -95,7 +95,7 @@ class LabeledScalarStorage:
         self.value[label].append(scalar)
 
     def extend(self, other):
-        for key, value in self.value.keys():
+        for key in self.value.keys():
             self[key].extend(other[key])
 
     @property
@@ -108,6 +108,11 @@ class StructureDataset:
 
     def __getitem__(self, item):
         return self.value[item]
+
+    def __setitem__(self, x, y):
+        if isinstance(self.value[x], StructureDataset):
+            raise ValueError("can't __setitem__ to group")
+        self.value[x] = y
 
     def keys(self):
         return self.value.keys()

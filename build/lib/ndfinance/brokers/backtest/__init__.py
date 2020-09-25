@@ -23,7 +23,8 @@ class PortFolioLogLabel:
     lst = [portfolio_value_total, portfolio_value,
             leverage, leverage_total,
             cash_weight_percentage, cash_weight_percentage_total,
-            unrealized_pnl_percentage, unrealized_pnl_percentage_total]
+            unrealized_pnl_percentage, unrealized_pnl_percentage_total,
+            OHLCVT.timestamp]
 
 
 class BacktestPortfolio:
@@ -40,13 +41,7 @@ class BacktestPortfolio:
         self.withdraw_account = 0
         self.last_withdraw = self.indexer.timestamp
 
-        self.log = LabeledScalarStorage(
-            PortFolioLogLabel.portfolio_value_total, PortFolioLogLabel.portfolio_value,
-            PortFolioLogLabel.leverage, PortFolioLogLabel.leverage_total,
-            PortFolioLogLabel.cash_weight_percentage, PortFolioLogLabel.cash_weight_percentage_total,
-            PortFolioLogLabel.unrealized_pnl_percentage, PortFolioLogLabel.unrealized_pnl_percentage_total,
-            OHLCVT.timestamp
-        )
+        self.log = LabeledScalarStorage(*PortFolioLogLabel.lst)
 
     def add_position(self, position: Position):
         if position.asset.ticker in self.positions.keys():
@@ -133,10 +128,14 @@ class PnlLogLabel:
     realized_pnl = "realized_pnl"
     realized_pnl_percentage = "realized_pnl_percentage"
     realized_pnl_percentage_weighted = "realized_pnl_percentage_weighted"
+    order_timestamp = "order_timestamp"
+    order_type = "order"
 
     lst = [realized_pnl,
            realized_pnl_percentage,
-           realized_pnl_percentage_weighted]
+           realized_pnl_percentage_weighted,
+           order_timestamp,
+           order_type]
 
 
 class BacktestBroker(Broker):
@@ -151,8 +150,7 @@ class BacktestBroker(Broker):
         self.assets: Dict[str, Asset] = {}
         self.order_queue = {}
         self.data_provider: BacktestDataProvider
-        self.log = LabeledScalarStorage(
-            PnlLogLabel.realized_pnl, PnlLogLabel.realized_pnl_percentage, PnlLogLabel.realized_pnl_percentage_weighted)
+        self.log = LabeledScalarStorage(*PnlLogLabel.lst)
 
     def add_asset(self, *args):
         for arg in args:
@@ -165,6 +163,10 @@ class BacktestBroker(Broker):
         [self.order(o, from_queue=True) for o in list(self.order_queue.values())]
 
     def _order_limit_force(self, order: Limit, market=False):
+        if (order.amount == np.nan) or (order.amount == 0):
+            warnings.warn(f"invalid value: {order.amount} encountered in limit order")
+            return
+
         order.price = (1 + order.side * order.asset.fee) * order.price
 
         if market:
@@ -174,12 +176,13 @@ class BacktestBroker(Broker):
             order.asset, order.price, order.amount, order.side, self.indexer.timestamp)
 
         realized, pnl_percentage = self.portfolio.add_position(new_position)
+        if not realized: pnl_percentage : 0
+        realized_pnl_percentage_weighted = realized / self.portfolio.portfolio_value * 100
 
-        if realized:
-            realized_pnl_percentage_weighted = realized / self.portfolio.portfolio_value
-            self.log.add_scalar(PnlLogLabel.realized_pnl, realized)
-            self.log.add_scalar(PnlLogLabel.realized_pnl_percentage, pnl_percentage)
-            self.log.add_scalar(PnlLogLabel.realized_pnl_percentage_weighted, realized_pnl_percentage_weighted)
+        self.log.add_scalar(PnlLogLabel.realized_pnl, realized)
+        self.log.add_scalar(PnlLogLabel.realized_pnl_percentage, pnl_percentage)
+        self.log.add_scalar(PnlLogLabel.realized_pnl_percentage_weighted, realized_pnl_percentage_weighted)
+
 
         return realized
 
@@ -309,6 +312,8 @@ class BacktestBroker(Broker):
     def order(self, order, from_queue=False):
         realized = self._order(order, from_queue)
         self.portfolio.deposit_margin(realized)
+        self.log.add_scalar(PnlLogLabel.order_type, str(order))
+        self.log.add_scalar(PnlLogLabel.order_timestamp, self.indexer.timestamp)
 
     def get_log(self):
         return self.portfolio.log + self.log

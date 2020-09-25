@@ -6,6 +6,8 @@ from ndfinance.brokers.base.asset import *
 from ndfinance.brokers.base.data_provider import *
 from ndfinance.brokers.base.position import *
 from ndfinance.brokers.base.withdraw import WithDrawConfig, WithDrawTypes
+from ndfinance.utils.array_utils import *
+
 
 class Config :
     name="config"
@@ -61,6 +63,9 @@ class TimeIndexer(object):
 
     def is_done(self):
         return self.idx == self.lastidx
+
+    def to_chunks(self, n_chunks=11):
+        return split_list(self.timestamp_lst, n_chunks)
 
     @property
     def datetime(self):
