@@ -29,15 +29,12 @@ def main(tickers, **kwargs):
     
     analyzer = BacktestAnalyzer(log)
     analyzer.print()
-    analyzer.export_log(path=path)
-    analyzer.export_result(path=path)
-    
-    from pprint import pprint as print 
+    analyzer.export(path)
 
     visualizer = BasicVisualizer()
     visualizer.plot_log(log)
 
-    visualizer.export_figures(path=path)
+    visualizer.export(path=path)
 
 if __name__ == '__main__':
     main(
