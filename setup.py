@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ndfinance',
-    version='',
+    version='0.0.0',
     packages=['ndfinance', 'ndfinance.core', 'ndfinance.data', 'ndfinance.data.crawlers',
               'ndfinance.data.crawlers.naver', 'ndfinance.data.crawlers.bitmex',
               'ndfinance.data.crawlers.fx_fut_data_ts_room', 'ndfinance.utils', 'ndfinance.brokers',
