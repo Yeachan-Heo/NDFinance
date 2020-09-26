@@ -53,7 +53,7 @@ if __name__ == '__main__':
             "ETHUSD"
         ],
         [
-            "/home/bellmanlabs/Data/bitmex/trade/ohlc/5T/XBTUSD.csv",
-            "/home/bellmanlabs/Data/bitmex/trade/ohlc/5T/ETHUSD.csv"
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/10T/XBTUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/10T/ETHUSD.csv"
         ]
     )
