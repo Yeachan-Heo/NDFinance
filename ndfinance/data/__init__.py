@@ -2,7 +2,6 @@ import pandas as pd
 import datetime
 import time
 from dateutils import relativedelta
-from ndfinance.brokers.backtest import TimeIndexedData
 import os
 
 def resample_tick(df, symbol, period="1T"):
@@ -59,15 +58,6 @@ def resample_ohlc_dir(path, from_period, to_period, epath=None, **kwargs):
         epth = epath + f
         print(epth)
         resample_ohlc(pth, epth, period=to_period, **kwargs)
-
-def make_bitmex_data(path):
-    df = pd.read_csv(path)
-    df["timestamp"] = [time.mktime(datetime.datetime.strptime(t, "%Y-%m-%d %H:%M:%S").timetuple()) for t in
-                       df["timestamp"].tolist()]
-    data = TimeIndexedData()
-    data.from_pandas(df)
-
-    return data
 
 if __name__ == '__main__':
     for period in ("3T", "5T", "10T", "15T", "30T", "1H", "1D", "1M", "1Y"):

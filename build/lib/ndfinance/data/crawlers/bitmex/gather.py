@@ -7,7 +7,7 @@ import os
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from pprint import pprint
-from ndfinance.brokers.backtest import to_timestamp
+from ndfinance.utils.array_utils import to_timestamp
 
 
 def split_list(alist, wanted_parts=1):
@@ -136,10 +136,12 @@ class BitmexDataManager:
         start_date = make_date(start_date)
         for i in (os.listdir(self.ticker_data_dir)):
             raw_fnames = os.listdir(self.ticker_data_dir + i + "/raw/")
+            print(raw_fnames)
             raw_fnames = list(filter(lambda x: make_date(x[:8]) >= start_date, raw_fnames))
             for rfname in raw_fnames:
                 df = self.resample_tick(self.ticker_data_dir + i + "/raw/" + rfname, "1T")
                 df.to_csv(self.ticker_data_dir + i + "/1T/" + rfname)
+                print(self.ticker_data_dir + i + "/1T/" + rfname)
 
     def gather_ohlc_data(self, start_date="19700101"):
         start_date = make_date(start_date)
@@ -244,8 +246,6 @@ class BitmexDataManager:
 
             os.system(f"wget -P {self.raw_data_dir} {link}")
             print(link)
-        os.system(f"gzip -d {self.raw_data_dir}/*.gz")
-        time.sleep(10)
 
 
 def get_date():
@@ -253,12 +253,13 @@ def get_date():
     return date
 
 if __name__ == '__main__':
-    #make_directories("/home/bellmanlabs/Data/bitmex/trade/raw/", "/home/bellmanlabs/Data/bitmex/trade/tickers/")
+    make_directories("/home/bellmanlabs/Data/bitmex/trade/raw/", "/home/bellmanlabs/Data/bitmex/trade/tickers/")
     manager = BitmexDataManager("/home/bellmanlabs/Data/bitmex/trade/raw/", "/home/bellmanlabs/Data/bitmex/trade/tickers/", "/home/bellmanlabs/Data/bitmex/trade/ohlc/") #asdf
     #date = get_date()
-    #manager.crawl(start_date=date)
-    #manager.resample_tick_data(start_date=date)
-    #manager.gather_ohlc_data(start_date=date)
+    #manager.crawl(start_date="20200907")
+    manager.split_tick_data(start_date="20200908")
+    manager.resample_tick_data(start_date="20200908")
+    manager.gather_ohlc_data(start_date="20200908")
     manager.gather_quarterly()
     for period in (["1T", "3T","5T","10T","15T","30T","1H","1D","1M","1Y"]):
         manager.resample_ohlc_dir(period)

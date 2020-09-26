@@ -91,10 +91,11 @@ class BacktestAnalyzer:
     def export_log(self, path="./bt_result/", name="log.csv"):
         if not os.path.exists(path):
             os.makedirs(path)
-
+    
         df = pd.DataFrame()
         for key in PnlLogLabel.lst:
-            df[key] = self.log[key]
+            try: df[key] = self.log[key]
+            except: print(key)
         print("saving log: ", path + "broker_" + name)
         df.to_csv(path + "broker_" + name)
         

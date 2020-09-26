@@ -311,9 +311,10 @@ class BacktestBroker(Broker):
 
     def order(self, order, from_queue=False):
         realized = self._order(order, from_queue)
-        self.portfolio.deposit_margin(realized)
-        self.log.add_scalar(PnlLogLabel.order_type, str(order))
-        self.log.add_scalar(PnlLogLabel.order_timestamp, self.indexer.timestamp)
+        if not realized is None:
+            self.portfolio.deposit_margin(realized)
+            self.log.add_scalar(PnlLogLabel.order_type, str(order))
+            self.log.add_scalar(PnlLogLabel.order_timestamp, self.indexer.timestamp)
 
     def get_log(self):
         return self.portfolio.log + self.log

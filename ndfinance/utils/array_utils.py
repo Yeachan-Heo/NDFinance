@@ -5,7 +5,7 @@ import numba
 import time
 import os
 
-@numba.njit
+
 def cummul(array):
     temp = 1
     ret = []
@@ -20,9 +20,9 @@ def listdirs(folder):
         if os.path.isdir(d)
     ]
 
-def split_list(alist, wanted_parts=1):
+def split_list(alist, wanted_parts=1, slip=2):
     length = len(alist)
-    return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts]
+    return [ alist[int(np.clip(i*length// wanted_parts-slip, 0, np.inf)): (i+1)*length // wanted_parts]
              for i in range(wanted_parts) ]
 
 

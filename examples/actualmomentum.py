@@ -8,7 +8,7 @@ from ndfinance.callbacks import PositionWeightPrinterCallback
 import matplotlib.pyplot as plt
 
 
-def main(tickers, paths=None, n=200, **kwargs):
+def main(tickers, paths=None, n=2000, **kwargs):
     path="./bt_results/actualmomentum/"
     dp = BacktestDataProvider()
     if path is None:
@@ -26,7 +26,7 @@ def main(tickers, paths=None, n=200, **kwargs):
 
     strategy = ActualMomentumStratagy(
         momentum_threshold=1, 
-        rebalance_period=TimeFrames.day,
+        rebalance_period=TimeFrames.hour,
         momentum_label=f"ROCR{n}",
     )
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             "ETHUSD"
         ],
         [
-            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1T/XBTUSD.csv",
-            "/home/bellmanlabs/Data/bitmex/trade/ohlc/1T/ETHUSD.csv"
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/5T/XBTUSD.csv",
+            "/home/bellmanlabs/Data/bitmex/trade/ohlc/5T/ETHUSD.csv"
         ]
     )

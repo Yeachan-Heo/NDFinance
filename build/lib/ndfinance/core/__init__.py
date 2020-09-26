@@ -1,16 +1,21 @@
 import ray
 import tqdm
 from copy import deepcopy
-from ndfinance.brokers.backtest import BacktestBroker, TimeIndexer, BacktestDataProvider, TimeFrames
-
+from ndfinance.brokers.backtest import *
+from ndfinance.utils.array_utils import *
+import sys
+import time
+from functools import reduce
 
 class Engine:
     def __init__(self):
         pass
 
 
+
+
 class BacktestEngine(Engine):
-    def __init__(self, use_tqdm=True, desc="backtest"):
+    def __init__(self, use_tqdm=True, desc="[ENGINE]"):
         super(BacktestEngine, self).__init__()
         self.use_tqdm = use_tqdm
         self.desc = desc
@@ -65,10 +70,12 @@ class DistributedBacktestEngine(BacktestEngine):
         super(DistributedBacktestEngine, self).__init__(*args, **kwargs)
         self.engines = []
         self.n_cores = n_cores
-
+    
     def distribute(self):
         ray.init()
+        t = time.time()
         print("-"*50, "[ENGINE DISTRIBUTION START]", "-"*50)
+
         chunks = self.indexer.to_chunks(n_chunks = self.n_cores)
         indexers = [TimeIndexer(c) for c in chunks]
         data_providers = [deepcopy(self.data_provider) for _ in range(self.n_cores)]
@@ -77,36 +84,41 @@ class DistributedBacktestEngine(BacktestEngine):
         [dp.cut_data() for dp in data_providers]
         brokers = [BacktestBroker(dp, self.broker.withdraw_config, self.broker.portfolio.initial_margin)
         for dp in data_providers]
+        
         [broker.add_asset(*self.broker.assets.values()) for broker in brokers]
-        self.engines = [BacktestEngineWorker.remote(use_tqdm=False, desc=f"thread #{i}") for i in range(self.n_cores)]
+        
+        self.engines = [BacktestEngineWorker.remote(use_tqdm=self.use_tqdm, desc=f"[ENGINE THREAD] #{'{:02d}'.format(i)}") for i in range(self.n_cores)]
         [e.register_broker.remote(broker) for e, broker in zip(self.engines, brokers)]
         [e.register_strategy.remote(deepcopy(self.strategy)) for e in self.engines]
-        print("-"*50, "[DISTRIBUTED ALL ENGINES]", "-"*50)
+        
+        print("-"*50, f"[DISTRIBUTED {self.n_cores} ENGINES in {round(time.time()-t, 2)}s]", "-"*50)
 
     def run(self):
         out = [e.run.remote() for e in self.engines]
         temp = 0
 
-        with tqdm.tqdm(total=self.indexer.lastidx-2) as pbar:
-            cnt_sum = sum([ray.get(e.get_cnt.remote()) for e in self.engines])
-            pbar.update(cnt_sum - temp)
-            temp = cnt_sum
-
         logs = [ray.get(o) for o in out]
+
+
+        
+        deltas = [list(np.array(log[PortFolioLogLabel.portfolio_value][1:])
+         / np.array(log[PortFolioLogLabel.portfolio_value][:-1])) for log in logs]
+        deltas = reduce(lambda x, y: x + y, deltas)
+        deltas = [1] + deltas
+
         log = logs[0]
+
         for l in logs[1:]:
+            for key, item in l.items():
+                l[key] = item[1:]
             log.extend(l)
+
+        log[PortFolioLogLabel.portfolio_value_total] = cummul(np.array(deltas)) * self.broker.portfolio.initial_margin
+        log[PortFolioLogLabel.portfolio_value] = log[PortFolioLogLabel.portfolio_value_total]
         return log
-
-        
         
 
         
-
-        
-
-
-
 class MultiStrategyBacktestEngine(BacktestEngine):
     def __init__(self, *args, **kwargs):
         super(MultiStrategyBacktestEngine, self).__init__(*args, **kwargs)
