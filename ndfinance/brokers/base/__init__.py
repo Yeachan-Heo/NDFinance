@@ -42,11 +42,13 @@ class TimeIndexer(object):
     def __init__(self, timestamp_lst, from_timestamp=-np.inf, to_timestamp=np.inf):
         self.timestamp = None
 
-        if isinstance(to_timestamp, str):
-            to_timestamp = time.mktime(datetime.datetime.strptime(to_timestamp, "%Y-%m-%d").timetuple())
+        self.to_timestamp, self.from_timestamp = to_timestamp, from_timestamp
 
-        if isinstance(from_timestamp, str):
-            from_timestamp = time.mktime(datetime.datetime.strptime(from_timestamp, "%Y-%m-%d").timetuple())
+        if isinstance(self.to_timestamp, str):
+            self.to_timestamp = time.mktime(datetime.datetime.strptime(self.to_timestamp, "%Y-%m-%d").timetuple())
+
+        if isinstance(self.from_timestamp, str):
+            self.from_timestamp = time.mktime(datetime.datetime.strptime(self.from_timestamp, "%Y-%m-%d").timetuple())
 
         self.timestamp_lst = timestamp_lst[np.where(
             (from_timestamp <= timestamp_lst) & (timestamp_lst <= to_timestamp))[0]]
@@ -56,6 +58,9 @@ class TimeIndexer(object):
         self.first_timestamp = self.timestamp_lst[0]
         self.last_timestamp = self.timestamp_lst[-1]
         self.move()
+
+    def reset(self):
+        return self.__init__(self.timestamp_lst, self.from_timestamp, self.to_timestamp)
 
     def move(self):
         self.idx += 1

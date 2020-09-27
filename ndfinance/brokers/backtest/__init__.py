@@ -152,6 +152,9 @@ class BacktestBroker(Broker):
         self.data_provider: BacktestDataProvider
         self.log = LabeledScalarStorage(*PnlLogLabel.lst)
 
+    def reset(self):
+        return self.__init__(self.data_provider, self.portfolio.withdraw_config, self.portfolio.initial_margin)
+
     def add_asset(self, *args):
         for arg in args:
             self.assets[arg.ticker] = arg
