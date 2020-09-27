@@ -22,7 +22,7 @@ def main(tickers, paths=None, n=1000, **kwargs):
     dp.cut_data()
 
     brk = BacktestBroker(dp, initial_margin=10000)
-    [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
+    [brk.add_asset(Asset(ticker=ticker)) for ticker in tickers]
 
     strategy = ActualMomentumStratagy(
         momentum_threshold=1, 

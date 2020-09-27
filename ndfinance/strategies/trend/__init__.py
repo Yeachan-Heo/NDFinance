@@ -1,4 +1,4 @@
-from ndfinance.strategies import PeriodicRebalancingStrategy
+from ndfinance.strategies import PeriodicRebalancingStrategy, Strategy
 from ndfinance.strategies.utils import apply_n_percent_rule
 from ndfinance import Weight, Close
 import numpy as np
@@ -50,3 +50,10 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
             self.broker.order(
                     Weight(self.broker.assets[ticker], (self.broker.portfolio.portfolio_value_total), side, np.abs(weight)))
                 
+
+class VolatilityBreakout(Stretagy):
+    def __init__(self, k, time_cut, range_label="range"):
+        super(VolatilityBreakout, self).__init__()
+
+    def get_filtering(self):
+

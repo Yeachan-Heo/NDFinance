@@ -17,7 +17,7 @@ def main(tickers, **kwargs):
     dp.set_indexer(indexer)
 
     brk = BacktestBroker(dp, initial_margin=10000)
-    [brk.add_asset(Futures(ticker=ticker)) for ticker in tickers]
+    [brk.add_asset(Asset(ticker=ticker)) for ticker in tickers]
 
     strategy = SameWeightBuyHold()
 

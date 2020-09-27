@@ -153,7 +153,8 @@ class BacktestBroker(Broker):
         self.log = LabeledScalarStorage(*PnlLogLabel.lst)
 
     def reset(self):
-        return self.__init__(self.data_provider, self.portfolio.withdraw_config, self.portfolio.initial_margin)
+        return self.__init__(
+            self.data_provider, self.portfolio.withdraw_config, self.portfolio.initial_margin)
 
     def add_asset(self, *args):
         for arg in args:
@@ -167,13 +168,15 @@ class BacktestBroker(Broker):
 
     def _order_limit_force(self, order: Limit, market=False):
         if (order.amount == np.nan) or (order.amount == 0):
-            warnings.warn(f"invalid value: {order.amount} encountered in limit order")
+            warnings.warn(f"invalid value: {order.amount} encountered in limit order. ignoring the order")
             return
 
         order.price = (1 + order.side * order.asset.fee) * order.price
 
         if market:
             order.price = (1 + order.side * order.asset.slippage) * order.price
+
+        order.amount = np.clip(order.amount, 0, (self.orderable_margin / (order.price * order.asset.margin_percentage)) // order.asset.min_amount * order.asset.min_amount)
 
         new_position = Position(
             order.asset, order.price, order.amount, order.side, self.indexer.timestamp)
