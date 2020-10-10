@@ -1,6 +1,6 @@
 from ndfinance.strategies import PeriodicRebalancingStrategy, Strategy
 from ndfinance.strategies.utils import apply_n_percent_rule
-from ndfinance import Weight, Close
+from ndfinance import Weight, Close, TimeFrames, Rebalance
 import numpy as np
 from pprint import pprint as print
 
@@ -21,11 +21,12 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
     def _logic(self):
         momentum = {
             ticker : self.data_provider.get_ohlcvt(
-                ticker, self.momentum_label, self.momentum_timeframe)[-1]
-            for ticker in self.broker.assets.keys()
+                ticker.ticker, self.momentum_label, self.momentum_timeframe)[-1]
+            for ticker in self.broker.assets
         }
 
-        momentum_dict = {ticker : (m if np.abs(m) >= self.momentum_threshold else 0) for ticker, m in momentum.items()}
+        momentum_dict = {ticker : m 
+            for ticker, m in momentum.items() if np.abs(m) >= self.momentum_threshold}
         momentum_values = np.array(list(momentum_dict.values()))
         
         momentum_values = np.clip(
@@ -36,24 +37,38 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
         if np.abs(momentum_values).sum() == 0:
             momentum_values += 1e+10
             
-        weight = momentum_values / np.abs(momentum_values).sum()
-        side = (weight > 0).astype(int) * 2 - 1
+        self.broker.order(Rebalance(assets=momentum_dict.keys(), weights=momentum_values))
 
-        for weight, side, ticker in sorted(zip(np.abs(weight), side, self.broker.assets.keys())):
-            if ticker in self.broker.portfolio.positions.keys():
-                if weight == 0:
-                    self.broker.order(Close(self.broker.assets[ticker]))
-                    continue
-                self.broker.order(
-                    Weight(self.broker.assets[ticker], (self.broker.portfolio.portfolio_value_total), side, np.abs(weight)))
-                continue
-            self.broker.order(
-                    Weight(self.broker.assets[ticker], (self.broker.portfolio.portfolio_value_total), side, np.abs(weight)))
+
                 
 
-class VolatilityBreakout(Stretagy):
-    def __init__(self, k, time_cut, range_label="range"):
-        super(VolatilityBreakout, self).__init__()
+class VBLabels:
+    rng = "range"
 
-    def get_filtering(self):
+class VolatilityBreakout(Strategy):
+    def __init__(self, k=0.6, time_cut=9, max_positions=5, range_label="range", 
+                range_timeframe=TimeFrames.day, main_timeframe=TimeFrames.hour):
+        super(VolatilityBreakout, self).__init__()
+        self.k = k
+        self.time_cut = time_cut
+        self.range_label = range_label
+        self.max_positions = max_positions
+        self.dict_ = {}
+
+    def update_filtering_bet(self, ticker):
+        return 1, 1
+
+    def _update_params(self, ticker):
+        filtering, bet = self.update_filtering_bet(ticker)
+        dict_ = {
+            VBLabels.rng : self.data_provider.get_ohlcvt(self.range_label),
+        }
+        return dict_
+
+        
+
+    
+        
+        
+        
 

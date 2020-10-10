@@ -300,6 +300,42 @@ class BacktestBroker(Broker):
             return 0
         return 0
 
+    def _order_rebalance(self, order: Rebalance):
+        [
+            self._order_close(Close(asset=self.assets[ticker])) 
+            for ticker in self.portfolio.positions.keys() 
+            if not self.assets[ticker] in order.assets
+        ]
+
+        delta_weight_dict = {
+            ticker:abs(self.portfolio.positions[ticker].weight-order[self.assets[ticker]])
+            for ticker in self.portfolio.positions.keys()
+        }
+
+        [
+            self._order_weight(Weight(
+                    asset=self.assets[ticker], 
+                    value=self.portfolio.portfolio_value, 
+                    weight=np.abs(order[ticker]),
+                    side=np.sign(order[ticker]
+                ))) 
+            for ticker in self.portfolio.positions.keys()
+        ]
+
+        [order.dict_[ticker].__del__() for ticker 
+            in sorted(delta_weight_dict, key=lambda x: delta_weight_dict[x])]
+        
+        [
+            self._order_weight(Weight(
+                    asset=self.assets[ticker], 
+                    value=self.portfolio.portfolio_value, 
+                    side=np.sign(weight),
+                    weight=np.abs(weight)
+                ))
+            for ticker, weight in order.items()
+        ]
+        
+
     def _order(self, order, from_queue=False):
         if order.type == OrderTypes.limit:
             return self._order_limit(order, from_queue)
@@ -313,6 +349,8 @@ class BacktestBroker(Broker):
             return self._order_stop_loss(order, from_queue)
         if order.type == OrderTypes.timecut_close:
             return self._order_timecut_close(order, from_queue)
+        if order.type == OrderTypes.rebalance:
+            return self._order_rebalance(order)
         raise ValueError(f"unregistered order type detected:{order.type}")
 
     def order(self, order, from_queue=False):

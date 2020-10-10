@@ -22,6 +22,7 @@ class OrderTypes():
     weight = "weight"
     close = "close"
     timecut_close = "timecut_close"
+    rebalance = "rebalance"
 
 
 class StopLoss(Order):
@@ -117,4 +118,25 @@ class TimeCutClose(Order):
         return f"type:{self.type},ticker:{self.ticker},timestamp:{self.timestamp}"
 
         
+class Rebalance(Order):
+    def __init__(self, assets, weights, normalize=False):
+        super(Rebalance, self).__init__(OrderTypes.rebalance, assets)
+        self.assets = assets
+        self.weights = weights
+
+        if normalize:
+            sum_weights = np.sum(np.abs(self.weights))
+            self.weights = [x / sum_weights for x in self.weights]
+        self.dict_ = dict(zip(self.assets, self.weights))
+
+    def __getitem__(self, item):
+        return self.dict_[item]
+
+
+    def items(self):
+        return self.dict_.items()
+
+
+    def __str__(self):
+        return "RebalanceOrder"
         
