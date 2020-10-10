@@ -22,7 +22,7 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
         momentum = {
             ticker : self.data_provider.get_ohlcvt(
                 ticker.ticker, self.momentum_label, self.momentum_timeframe)[-1]
-            for ticker in self.broker.assets
+            for ticker in self.broker.assets.values()
         }
 
         momentum_dict = {ticker : m 

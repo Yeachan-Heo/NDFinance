@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 def main(tickers, paths=None, n=1000, **kwargs):
     path="./bt_results/distributed_actualmomentum/"
     dp = BacktestDataProvider()
-    if path is None:
+    if paths is None:
         dp.add_yf_tickers(*tickers)
     else:
         dp.add_ohlc_dataframes(paths, tickers)

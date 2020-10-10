@@ -1,7 +1,7 @@
 import pandas as pd
 import multiprocessing
+import ray
 import re
-
 
 def cleanText(readData):
     # 텍스트에 포함되어 있는 특수 문자 제거
@@ -13,7 +13,7 @@ def cleanText(readData):
         return float(text[1:])
 
 
-
+@ray.remote
 def _crawl_price(url):
     try:
         df = pd.read_html(url)[0]
@@ -37,9 +37,8 @@ def crawl_price(code, page):
     url = f"https://finance.naver.com/item/sise_day.nhn?code={code}&page="
     urls = [url + f"{p}" for p in reversed(range(1, page+1))]
     
-    with multiprocessing.Pool(page) as p:
-        dfs = p.map(_crawl_price, urls)
-    
+    _dfs = [_crawl_price.remote(url) for url in urls]
+    dfs = [ray.get(x) for x in _dfs]
     df = pd.DataFrame()
     
     for d in dfs:

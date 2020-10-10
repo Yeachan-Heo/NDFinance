@@ -38,6 +38,7 @@ class BacktestPortfolio:
         self.initial_margin = initial_margin
         self.margin_account = initial_margin
         self.portfolio_value = initial_margin
+        self.usable_margin = initial_margin
         self.withdraw_account = 0
         self.last_withdraw = self.indexer.timestamp
 
@@ -176,7 +177,7 @@ class BacktestBroker(Broker):
         if market:
             order.price = (1 + order.side * order.asset.slippage) * order.price
 
-        order.amount = np.clip(order.amount, 0, (self.orderable_margin / (order.price * order.asset.margin_percentage)) // order.asset.min_amount * order.asset.min_amount)
+        order.amount = np.clip(order.amount, 0, (self.portfolio.usable_margin / (order.price * order.asset.margin_percentage)) // order.asset.min_amount * order.asset.min_amount)
 
         new_position = Position(
             order.asset, order.price, order.amount, order.side, self.indexer.timestamp)
@@ -301,15 +302,17 @@ class BacktestBroker(Broker):
         return 0
 
     def _order_rebalance(self, order: Rebalance):
+        print(order.tickers)
         [
             self._order_close(Close(asset=self.assets[ticker])) 
             for ticker in self.portfolio.positions.keys() 
-            if not self.assets[ticker] in order.assets
+            if not ticker in order.tickers
         ]
 
         delta_weight_dict = {
-            ticker:abs(self.portfolio.positions[ticker].weight-order[self.assets[ticker]])
+            ticker:abs(self.portfolio.positions[ticker].weight-order[ticker])
             for ticker in self.portfolio.positions.keys()
+            if ticker in order.tickers
         }
 
         [
@@ -320,19 +323,18 @@ class BacktestBroker(Broker):
                     side=np.sign(order[ticker]
                 ))) 
             for ticker in self.portfolio.positions.keys()
+            if ticker in order.tickers
         ]
-
-        [order.dict_[ticker].__del__() for ticker 
-            in sorted(delta_weight_dict, key=lambda x: delta_weight_dict[x])]
         
         [
             self._order_weight(Weight(
                     asset=self.assets[ticker], 
                     value=self.portfolio.portfolio_value, 
-                    side=np.sign(weight),
-                    weight=np.abs(weight)
-                ))
+                    weight=np.abs(order[ticker]),
+                    side=np.sign(order[ticker]
+                ))) 
             for ticker, weight in order.items()
+            if not ticker in self.portfolio.positions.keys()
         ]
         
 

@@ -119,9 +119,9 @@ class TimeCutClose(Order):
 
         
 class Rebalance(Order):
-    def __init__(self, assets, weights, normalize=False):
-        super(Rebalance, self).__init__(OrderTypes.rebalance, assets)
-        self.assets = assets
+    def __init__(self, tickers, weights, normalize=False):
+        super(Rebalance, self).__init__(OrderTypes.rebalance, Asset("None"))
+        self.tickers = tickers
         self.weights = weights
 
         if normalize:

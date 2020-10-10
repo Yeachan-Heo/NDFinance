@@ -3,9 +3,12 @@ from ndfinance.analysis.technical import TechnicalIndicator
 from ndfinance.brokers.base import TimeIndexer
 from ndfinance.utils import array_utils
 from ndfinance.brokers.base import TimeFrames, asset
+from ndfinance.data.crawlers import get_yf_ticker_async
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import warnings
+import ray
 
 
 class BacktestDataProvider(DataProvider):
@@ -27,6 +30,10 @@ class BacktestDataProvider(DataProvider):
                            open=OHLCVT.open, high=OHLCVT.high,
                            low=OHLCVT.low, close=OHLCVT.close,
                            volume=OHLCVT.volume):
+        
+        if df.empty:
+            warnings.warn("empty df occured")
+            return
 
         if not df[timestamp].values.dtype == np.float64:
             df[timestamp] = array_utils.to_timestamp(df[timestamp], pattern=datetime_format)
@@ -123,15 +130,9 @@ class BacktestDataProvider(DataProvider):
                 timeframe_len = len(timeframe)
         return timeframe
 
-    def _add_yf_ticker(self, ticker):
-        hist = yf.Ticker(ticker).history(period="max")
-        hist.columns = [a.lower() for a in hist.columns]
-        hist["timestamp"] = [str(a) for a in hist.index]
-        self.add_ohlc_dataframe(hist, ticker=ticker)
-
     def add_yf_tickers(self, *tickers):
-        for ticker in tickers:
-            self._add_yf_ticker(ticker)
+        dataframes = get_yf_ticker_async(*tickers)
+        self.add_ohlc_dataframes(dataframes, tickers)
 
     def cut_data(self, slip=2):
         for ticker, timeframe_grp in self.group_ohlcv.items():

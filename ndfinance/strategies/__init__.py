@@ -26,6 +26,7 @@ class PeriodicRebalancingStrategy(Strategy):
     def register_engine(self, *args, **kwargs):
         super(PeriodicRebalancingStrategy, self).register_engine(*args, **kwargs)
         self.last_rebalance = self.indexer.timestamp
+        return self
 
     def logic(self):
         if (self.indexer.timestamp - self.last_rebalance) >= self.rebalance_period:
