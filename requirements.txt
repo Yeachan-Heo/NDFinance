@@ -1,173 +1,78 @@
-absl-py==0.9.0
-aiodns==1.1.1
 aiohttp==3.6.2
-appnope==0.1.0
-argon2-cffi @ file:///tmp/build/80754af9/argon2-cffi_1596828452693/work
-astroid @ file:///tmp/build/80754af9/astroid_1592495881661/work
-astunparse==1.6.3
-async-generator==1.10
+aiohttp-cors==0.7.0
+aioredis==1.3.1
 async-timeout==3.0.1
-atari-py==0.2.6
-attrs @ file:///tmp/build/80754af9/attrs_1600298409949/work
-backcall==0.2.0
-backtrader==1.9.76.123
-beautifulsoup4==4.9.1
-bleach @ file:///tmp/build/80754af9/bleach_1600439572647/work
-blinker==1.4
-brotlipy==0.7.0
-cachetools @ file:///tmp/build/80754af9/cachetools_1596822027882/work
-ccxt==1.34.1
+attrs==20.2.0
+beautifulsoup4==4.9.3
+blessings==1.7
+cachetools==4.1.1
 certifi==2020.6.20
-cffi @ file:///tmp/build/80754af9/cffi_1598370813909/work
 chardet==3.0.4
 click==7.1.2
-cloudpickle==1.3.0
+cloudpickle==1.6.0
 colorama==0.4.3
-cryptography @ file:///tmp/build/80754af9/cryptography_1598892037289/work
+colorful==0.5.4
 cycler==0.10.0
-dateutils==0.6.8
-decorator==4.4.2
-defusedxml==0.6.0
-dm-tree==0.1.5
-dnspython==2.0.0
-email-validator==1.1.1
-entrypoints==0.3
-ffn==0.3.4
+dateutils==0.6.11
 filelock==3.0.12
 future==0.18.2
-gast==0.4.0
 google==3.0.0
-google-auth @ file:///tmp/build/80754af9/google-auth_1598987460909/work
-google-auth-oauthlib==0.4.1
-google-pasta==0.2.0
-GPUtil==1.4.0
-grpcio @ file:///tmp/build/80754af9/grpcio_1597424467487/work
-gym==0.17.2
-h5py @ file:///tmp/build/80754af9/h5py_1593454119955/work
-idna @ file:///tmp/build/80754af9/idna_1593446292537/work
-importlib-metadata @ file:///tmp/build/80754af9/importlib-metadata_1593446408836/work
+google-api-core==1.22.4
+google-auth==1.22.1
+googleapis-common-protos==1.52.0
+gpustat==0.6.0
+grpcio==1.32.0
+gym==0.17.3
+hiredis==1.1.0
+idna==2.10
+importlib-metadata==2.0.0
 inflection==0.5.1
-ipykernel @ file:///tmp/build/80754af9/ipykernel_1596206598566/work/dist/ipykernel-5.3.4-py3-none-any.whl
-ipython @ file:///tmp/build/80754af9/ipython_1598883837425/work
-ipython-genutils==0.2.0
-ipywidgets==7.5.1
-isort @ file:///tmp/build/80754af9/isort_1600701677749/work
-jedi @ file:///tmp/build/80754af9/jedi_1596490743326/work
-Jinja2==2.11.2
-joblib==0.16.0
-json5==0.9.5
-jsonschema @ file:///tmp/build/80754af9/jsonschema_1594363551272/work
-jupyter==1.0.0
-jupyter-client @ file:///tmp/build/80754af9/jupyter_client_1601311786391/work
-jupyter-console==6.1.0
-jupyter-core==4.6.3
-jupyterlab==2.2.6
-jupyterlab-pygments @ file:///tmp/build/80754af9/jupyterlab_pygments_1601490720602/work
-jupyterlab-server @ file:///tmp/build/80754af9/jupyterlab_server_1594164409481/work
-Keras-Preprocessing==1.1.0
+jsonschema==3.2.0
 kiwisolver==1.2.0
-lazy-object-proxy==1.4.3
-llvmlite==0.33.0
-Logbook==1.5.3
+llvmlite==0.34.0
 lxml==4.5.2
-lz4==3.1.0
-Markdown @ file:///tmp/build/80754af9/markdown_1597433218422/work
-MarkupSafe @ file:///tmp/build/80754af9/markupsafe_1594371495811/work
-matplotlib==3.3.0
-mccabe==0.6.1
-mistune @ file:///tmp/build/80754af9/mistune_1594373098390/work
-mkl-fft==1.1.0
+matplotlib @ file:///tmp/build/80754af9/matplotlib-base_1597876320876/work
+mkl-fft==1.2.0
 mkl-random==1.1.1
 mkl-service==2.3.0
-modin==0.7.4
-more-itertools==8.4.0
+more-itertools==8.5.0
 msgpack==1.0.0
 multidict==4.7.6
 multitasking==0.0.9
-nbclient @ file:///tmp/build/80754af9/nbclient_1601059699549/work
-nbconvert @ file:///tmp/build/80754af9/nbconvert_1601914821128/work
-nbformat==5.0.7
 NDFinance==0.0.2
-nest-asyncio @ file:///tmp/build/80754af9/nest-asyncio_1601499549014/work
-notebook @ file:///tmp/build/80754af9/notebook_1601501580008/work
-numba==0.50.1
-numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1596233707986/work
-oauthlib==3.1.0
-opencv-python==4.4.0.42
-opencv-python-headless==4.4.0.42
-opt-einsum==3.1.0
-packaging==20.4
-pandas==1.0.5
-pandas-datareader==0.9.0
-pandocfilters==1.4.2
-parso==0.7.0
-pexpect @ file:///tmp/build/80754af9/pexpect_1594383317248/work
-pickleshare @ file:///tmp/build/80754af9/pickleshare_1594384075987/work
-Pillow==7.2.0
+numba==0.51.2
+numpy==1.19.2
+nvidia-ml-py3==7.352.0
+olefile==0.46
+opencensus==0.7.10
+opencensus-context==0.1.1
+pandas==1.1.3
+Pillow @ file:///tmp/build/80754af9/pillow_1594307325547/work
 prometheus-client==0.8.0
-prompt-toolkit @ file:///tmp/build/80754af9/prompt-toolkit_1598885458782/work
 protobuf==3.13.0
 psutil==5.7.2
-ptyprocess==0.6.0
 py-spy==0.3.3
-pyarrow==0.16.0
 pyasn1==0.4.8
-pyasn1-modules==0.2.7
-pycares==3.1.1
-pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+pyasn1-modules==0.2.8
 pyglet==1.5.0
-Pygments @ file:///tmp/build/80754af9/pygments_1600458456400/work
-PyJWT==1.7.1
-pylint @ file:///tmp/build/80754af9/pylint_1598624038450/work
-pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1594392929924/work
 pyparsing==2.4.7
-PyPrind==2.11.2
-pyrsistent @ file:///tmp/build/80754af9/pyrsistent_1600141707582/work
-PySocks @ file:///tmp/build/80754af9/pysocks_1594394576006/work
+pyrsistent==0.17.3
 python-dateutil==2.8.1
-python-telegram-bot==12.8
 pytz==2020.1
 PyYAML==5.3.1
-pyzmq==19.0.2
-qtconsole==4.7.7
-QtPy==1.9.0
 Quandl==3.5.2
-ray==0.8.6
+ray==1.0.0
 redis==3.4.1
-requests @ file:///tmp/build/80754af9/requests_1592841827918/work
-requests-oauthlib==1.3.0
-rsa @ file:///tmp/build/80754af9/rsa_1596998415516/work
-scikit-learn==0.23.1
-scipy @ file:///tmp/build/80754af9/scipy_1597686620742/work
-selenium==3.141.0
-Send2Trash==1.5.0
+requests==2.24.0
+rsa==4.6
+scipy==1.5.2
 six==1.15.0
 soupsieve==2.0.1
-TA-Lib==0.4.18
-tabulate==0.8.7
-tensorboard==2.2.1
-tensorboard-plugin-wit==1.6.0
-tensorboardX==2.1
-tensorflow==2.2.0
-tensorflow-estimator==2.2.0
-tensorflow-probability==0.10.1
-termcolor==1.1.0
-terminado==0.9.1
-testpath==0.4.4
-threadpoolctl==2.1.0
-toml @ file:///tmp/build/80754af9/toml_1592853716807/work
-torch==1.4.0
+TA-Lib==0.4.19
 tornado==6.0.4
-tqdm==4.48.2
-traitlets @ file:///tmp/build/80754af9/traitlets_1600712679583/work
-typed-ast==1.4.1
-urllib3 @ file:///tmp/build/80754af9/urllib3_1597086586889/work
-wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work
-webencodings==0.5.1
-webull==0.1.0
-Werkzeug==1.0.1
-widgetsnbextension==3.5.1
-wrapt==1.11.2
-yarl==1.1.0
-yfinance==0.1.54
-zipp==3.1.0
+tqdm @ file:///tmp/build/80754af9/tqdm_1602185206534/work
+typing-extensions==3.7.4.3
+urllib3==1.25.10
+yarl==1.6.0
+yfinance==0.1.55
+zipp==3.3.0
