@@ -95,7 +95,7 @@ class BacktestAnalyzer:
         df = pd.DataFrame()
         for key in PnlLogLabel.lst:
             try: df[key] = self.log[key]
-            except: print(key)
+            except: pass
         print("saving log: ", path + "broker_" + name)
         df.to_csv(path + "broker_" + name)
         
