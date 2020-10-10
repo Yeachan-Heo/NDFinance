@@ -5,12 +5,13 @@ import numpy as np
 from pprint import pprint as print
 
 class ActualMomentumStratagy(PeriodicRebalancingStrategy):
-    def __init__(self, momentum_threshold, rebalance_period, momentum_label="momentum", momentum_timeframe=None, clip_param=0.3):
+    def __init__(self, momentum_threshold, rebalance_period, n_pos=5, momentum_label="momentum", momentum_timeframe=None, clip_param=0.3):
         super(ActualMomentumStratagy, self).__init__(rebalance_period)
         self.momentum_threshold = momentum_threshold
         self.momentum_label = momentum_label
         self.momentum_timeframe = momentum_timeframe
         self.clip_param = clip_param
+        self.n_pos = 5
 
     def register_engine(self, *args, **kwargs):
         super(ActualMomentumStratagy, self).register_engine(*args, **kwargs)
@@ -21,23 +22,19 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
     def _logic(self):
         momentum = {
             ticker : self.data_provider.get_ohlcvt(
-                ticker.ticker, self.momentum_label, self.momentum_timeframe)[-1]
-            for ticker in self.broker.assets.values()
+                ticker, self.momentum_label, self.momentum_timeframe)[-1]
+            for ticker in self.broker.assets.keys()
         }
-
-        momentum_dict = {ticker : m 
-            for ticker, m in momentum.items() if np.abs(m) >= self.momentum_threshold}
-        momentum_values = np.array(list(momentum_dict.values()))
         
-        momentum_values = np.clip(
-            momentum_values, 
-            momentum_values.mean()-momentum_values.std()*self.clip_param, 
-            momentum_values.mean()+momentum_values.std()*self.clip_param
-        )
-        if np.abs(momentum_values).sum() == 0:
-            momentum_values += 1e+10
-            
-        self.broker.order(Rebalance(assets=momentum_dict.keys(), weights=momentum_values))
+        momentum_dict = {ticker : momentum[ticker]
+            for ticker in sorted(momentum, key=lambda x: momentum[x], reverse=True)[:5] if momentum[ticker] >= self.momentum_threshold}
+        
+        sum_momentum = sum(list(momentum_dict.values()))
+        coeff = len(momentum_dict.keys()) / self.n_pos
+        
+        momentum_dict = {ticker : momentum[ticker] / sum_momentum * coeff for ticker in momentum_dict.keys()}
+
+        self.broker.order(Rebalance(tickers=list(momentum_dict.keys()), weights=list(momentum_dict.values()), normalize=False))
 
 
                 

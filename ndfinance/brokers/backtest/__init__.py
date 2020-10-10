@@ -177,8 +177,6 @@ class BacktestBroker(Broker):
         if market:
             order.price = (1 + order.side * order.asset.slippage) * order.price
 
-        order.amount = np.clip(order.amount, 0, (self.portfolio.usable_margin / (order.price * order.asset.margin_percentage)) // order.asset.min_amount * order.asset.min_amount)
-
         new_position = Position(
             order.asset, order.price, order.amount, order.side, self.indexer.timestamp)
 
@@ -302,31 +300,29 @@ class BacktestBroker(Broker):
         return 0
 
     def _order_rebalance(self, order: Rebalance):
-        print(order.tickers)
-        [
+        realized = 0
+
+        realized += sum([
             self._order_close(Close(asset=self.assets[ticker])) 
-            for ticker in self.portfolio.positions.keys() 
-            if not ticker in order.tickers
-        ]
+            for ticker in list(self.portfolio.positions.keys()) 
+        ])
 
         delta_weight_dict = {
             ticker:abs(self.portfolio.positions[ticker].weight-order[ticker])
             for ticker in self.portfolio.positions.keys()
-            if ticker in order.tickers
         }
 
-        [
+        realized += sum([
             self._order_weight(Weight(
                     asset=self.assets[ticker], 
                     value=self.portfolio.portfolio_value, 
                     weight=np.abs(order[ticker]),
                     side=np.sign(order[ticker]
                 ))) 
-            for ticker in self.portfolio.positions.keys()
-            if ticker in order.tickers
-        ]
+            for ticker in sorted(delta_weight_dict, key=lambda i:delta_weight_dict[i])
+        ])
         
-        [
+        realized += sum([
             self._order_weight(Weight(
                     asset=self.assets[ticker], 
                     value=self.portfolio.portfolio_value, 
@@ -334,8 +330,9 @@ class BacktestBroker(Broker):
                     side=np.sign(order[ticker]
                 ))) 
             for ticker, weight in order.items()
-            if not ticker in self.portfolio.positions.keys()
-        ]
+        ])
+
+        return realized
         
 
     def _order(self, order, from_queue=False):

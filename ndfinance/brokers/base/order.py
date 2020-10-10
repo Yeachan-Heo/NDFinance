@@ -127,7 +127,8 @@ class Rebalance(Order):
         if normalize:
             sum_weights = np.sum(np.abs(self.weights))
             self.weights = [x / sum_weights for x in self.weights]
-        self.dict_ = dict(zip(self.assets, self.weights))
+
+        self.dict_ = dict(zip(self.tickers, self.weights))
 
     def __getitem__(self, item):
         return self.dict_[item]
