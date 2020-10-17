@@ -42,7 +42,7 @@ class BacktestAnalyzer:
         self.result["win_trade_count"] = len(filter_array(lambda x: x > 0, log["realized_pnl"]))
         self.result["lose_trade_count"] = len(filter_array(lambda x: x < 0, log["realized_pnl"]))
 
-        self.result["total_trade_count"] = len(log["realized_pnl"])
+        self.result["total_trade_count"] = len(log["win_trade_count"]) + len(log["lose_trade_count"])
 
         self.result["win_rate_percentage"] = self.result["win_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100
         self.result["lose_rate_percentage"] = self.result["lose_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100

@@ -48,6 +48,6 @@ if __name__ == '__main__':
             "AMZN",
             "TWTR",
             "BIDU",
-            "BABA"
+            "BABA",
         ]
     )

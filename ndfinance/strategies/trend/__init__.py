@@ -37,15 +37,11 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
         self.broker.order(Rebalance(tickers=list(momentum_dict.keys()), weights=list(momentum_dict.values()), normalize=False))
 
 
-                
-
-class VBLabels:
-    rng = "range"
-
 class VolatilityBreakout(Strategy):
     def __init__(self, k=0.6, time_cut=9, max_positions=5, range_label="range", 
                 range_timeframe=TimeFrames.day, main_timeframe=TimeFrames.hour):
         super(VolatilityBreakout, self).__init__()
+        self.RANGE = "range"
         self.k = k
         self.time_cut = time_cut
         self.range_label = range_label
@@ -58,7 +54,7 @@ class VolatilityBreakout(Strategy):
     def _update_params(self, ticker):
         filtering, bet = self.update_filtering_bet(ticker)
         dict_ = {
-            VBLabels.rng : self.data_provider.get_ohlcvt(self.range_label),
+            self.RANGE : self.data_provider.get_ohlcvt(self.range_label),
         }
         return dict_
 

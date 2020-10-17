@@ -51,3 +51,26 @@ class RateOfChange(TechnicalIndicator):
 
     def __call__(self, data:np.ndarray):
         return (ta.ROCR(data[OHLCVT.close], timeperiod=self.period)-1)*100
+
+
+class RSI(TechnicalIndicator):
+    def __init__(self, period):
+        self.period = period
+        super(RSI, self).__init__()
+    
+    def make_name(self) -> str:
+        return f"RSI{self.period}"
+    
+    def __call__(self, data):
+        return ta.RSI(data[OHLCVT.close], timeperiod=self.period)
+
+
+class Range(TechnicalIndicator):
+    def __init__(self):
+        super(Range, self).__init__()
+
+    def make_name(self) -> str:
+        return "Range"
+
+    def __call__(self, data):
+        return data["high"] - data["low"]

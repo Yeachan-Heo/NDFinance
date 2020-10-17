@@ -157,7 +157,8 @@ if __name__ == '__main__':
             "AMZN",
             "TWTR",
             "BIDU",
-            "BABA"
+            "BABA",
+            #"^NDX"
     ]
     
     main(universe_fang_plus, path="./bt_results/actualmomentum/fang_plus/")
