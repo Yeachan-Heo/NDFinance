@@ -276,6 +276,11 @@ class BacktestBroker(Broker):
             self.add_order_to_queue(order)
             return 0
         return 0
+    
+    # considering ohlcv bars to be realistic, the stop loss and take profit execution has to be improved.
+    # re-evaluate the position in high/low in take profit/stop loss orders.
+    # if the re-evaluated position's unrealized p&l percentage exceeds the threshold
+    # force order like close order
 
     def _order_take_profit(self, order: TakeProfit, from_queue):
         if self.portfolio.positions[order.asset.ticker].unrealized_pnl_percentage >= order.threshold:
@@ -336,6 +341,8 @@ class BacktestBroker(Broker):
         
 
     def _order(self, order, from_queue=False):
+        if (order.type in [OrderTypes.stop_loss, OrderTypes.timecut_close, OrderTypes.take_profit]) & (order.ticker not in self.portfolio.positions.keys()):
+            return 0
         if order.type == OrderTypes.limit:
             return self._order_limit(order, from_queue)
         if order.type == OrderTypes.close:
@@ -346,6 +353,8 @@ class BacktestBroker(Broker):
             return self._order_weight(order)
         if order.type == OrderTypes.stop_loss:
             return self._order_stop_loss(order, from_queue)
+        if order.type == OrderTypes.take_profit:
+            return self._order_take_profit(order, from_queue)
         if order.type == OrderTypes.timecut_close:
             return self._order_timecut_close(order, from_queue)
         if order.type == OrderTypes.rebalance:

@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='NDFinance',
-    version='0.0.2',
+    version='0.0.3',
     packages=['ndfinance', 'ndfinance.core', 'ndfinance.data', 'ndfinance.data.crawlers',
               'ndfinance.data.crawlers.naver', 'ndfinance.data.crawlers.bitmex', 'ndfinance.utils',
               'ndfinance.utils.backtest', 'ndfinance.brokers', 'ndfinance.brokers.base', 'ndfinance.brokers.backtest',
