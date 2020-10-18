@@ -8,7 +8,7 @@ from ndfinance.callbacks import PositionWeightPrinterCallback
 import matplotlib.pyplot as plt
 
 
-def main(ticker, n=200, path="./bt_results/rsi/", timecut_days=10):
+def main(ticker, n=14, path="./bt_results/rsi/", timecut_days=7):
     dp = BacktestDataProvider()
     dp.add_yf_tickers(ticker)
     dp.add_technical_indicators([ticker], [TimeFrames.day], [RSI(n)])
@@ -21,7 +21,8 @@ def main(ticker, n=200, path="./bt_results/rsi/", timecut_days=10):
     brk.add_asset(Asset(ticker=ticker))
 
     strategy = OscillatorStrategy(
-        breakout_threshold=50, oversold_threshold=30, overbought_threshold=70, osc_label=f"RSI{n}", use_short=False, 
+        breakout_threshold=50, oversold_threshold=30, overbought_threshold=70, 
+        osc_label=f"RSI{n}", use_short=False, 
         use_time_cut=False, timecut_params={"days" : timecut_days},
         use_stop_loss=True, stop_loss_params={"threshold": 5},
         use_n_perc_rule=False, n_perc_params={"n_percent" : 5, "loss_cut_percent" : 10}
@@ -43,4 +44,5 @@ def main(ticker, n=200, path="./bt_results/rsi/", timecut_days=10):
 
 
 if __name__ == "__main__":
-    main("^GSPC")
+    main("^GSPC",  path="./bt_results/rsi/gspc/")
+    main("^IXIC",  path="./bt_results/rsi/ixic/")
