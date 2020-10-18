@@ -21,7 +21,7 @@ def main(ticker, n=14, path="./bt_results/rsi/", timecut_days=7):
     brk.add_asset(Asset(ticker=ticker))
 
     strategy = OscillatorStrategy(
-        breakout_threshold=50, oversold_threshold=30, overbought_threshold=70, 
+        breakout_threshold=50, oversold_threshold=40, overbought_threshold=60, 
         osc_label=f"RSI{n}", use_short=False, 
         use_time_cut=False, timecut_params={"days" : timecut_days},
         use_stop_loss=True, stop_loss_params={"threshold": 5},
