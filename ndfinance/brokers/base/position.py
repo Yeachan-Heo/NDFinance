@@ -23,6 +23,11 @@ class Position:
         self.position_margin = np.nan
         self.weight = np.nan
 
+        self.unrealized_pnl = 0
+        self.unrealized_pnl_percentage = 0
+
+
+
     def add_position(self, position):
         amount = position.amount
         side = position.side

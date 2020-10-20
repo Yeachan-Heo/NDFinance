@@ -3,7 +3,7 @@ import sys
 
 setup(
     name='NDFinance',
-    version='0.0.4',
+    version='0.0.5',
     packages=['ndfinance', 'ndfinance.core', 'ndfinance.data', 'ndfinance.data.crawlers',
               'ndfinance.data.crawlers.naver', 'ndfinance.data.crawlers.bitmex', 'ndfinance.utils',
               'ndfinance.utils.backtest', 'ndfinance.brokers', 'ndfinance.brokers.base', 'ndfinance.brokers.backtest',

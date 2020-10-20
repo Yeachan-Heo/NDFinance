@@ -34,6 +34,8 @@ class BacktestAnalyzer:
             benchmark = np.ones(shape=(len(self.log["timestamp"]),))
             self.log["benchmark"] = benchmark
 
+        self.result["overall P&L"] = self.log["portfolio_value_total"][-1] - self.log["portfolio_value_total"][0]
+        self.result["overall P&L(%)"] = (self.log["portfolio_value_total"][-1] / self.log["portfolio_value_total"][0] - 1)*100
         self.result["CAGR"] = calc_cagr(self.log["portfolio_value_total"], self.log["timestamp"])
         self.result["MDD"] = -get_mdd(self.log["portfolio_value"])
 
@@ -42,7 +44,7 @@ class BacktestAnalyzer:
         self.result["win_trade_count"] = len(filter_array(lambda x: x > 0, log["realized_pnl"]))
         self.result["lose_trade_count"] = len(filter_array(lambda x: x < 0, log["realized_pnl"]))
 
-        self.result["total_trade_count"] = len(log["win_trade_count"]) + len(log["lose_trade_count"])
+        self.result["total_trade_count"] = self.result["win_trade_count"] + self.result["lose_trade_count"]
 
         self.result["win_rate_percentage"] = self.result["win_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100
         self.result["lose_rate_percentage"] = self.result["lose_trade_count"] / np.clip(self.result["total_trade_count"], 1, np.inf) * 100

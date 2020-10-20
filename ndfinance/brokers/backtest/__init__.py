@@ -267,30 +267,39 @@ class BacktestBroker(Broker):
         )
 
     def _order_stop_loss(self, order: StopLoss, from_queue):
-        if self.portfolio.positions[order.asset.ticker].unrealized_pnl_percentage <= order.threshold:
-            close_order = Close(order.asset)
-            if from_queue:
-                del self.order_queue[order.id]
-            return self._order_close(close_order)
         if not from_queue:
             self.add_order_to_queue(order)
             return 0
+            
+        pos = self.portfolio.positions[order.asset.ticker]
+        current_price = self.data_provider.get_ohlcvt(order.ticker, OHLCVT.high) \
+            if pos.side == OrderSide.sell else self.data_provider.get_ohlcvt(order.ticker, OHLCVT.low)
+        
+        unrealized_pnl_percentage = (current_price / pos.avg_price - 1) * pos.side * 100
+        
+        if unrealized_pnl_percentage <= order.threshold:
+            limit_price = pos.avg_price * (100 - order.threshold * pos.side) / 100
+            close_order = Limit(order.asset, pos.amount, -pos.side, limit_price)
+            del self.order_queue[order.id]
+            return self._order_limit_force(close_order)
         return 0
-    
-    # considering ohlcv bars to be realistic, the stop loss and take profit execution has to be improved.
-    # re-evaluate the position in high/low in take profit/stop loss orders.
-    # if the re-evaluated position's unrealized p&l percentage exceeds the threshold
-    # force order like close order
 
     def _order_take_profit(self, order: TakeProfit, from_queue):
-        if self.portfolio.positions[order.asset.ticker].unrealized_pnl_percentage >= order.threshold:
-            close_order = Close(order.asset)
-            if from_queue:
-                del self.order_queue[order.id]
-            return self._order_close(close_order)
         if not from_queue:
             self.add_order_to_queue(order)
             return 0
+
+        pos = self.portfolio.positions[order.asset.ticker]
+        current_price = self.data_provider.get_ohlcvt(order.ticker, OHLCVT.high) \
+            if pos.side == OrderSide.buy else self.data_provider.get_ohlcvt(order.ticker, OHLCVT.low)
+        
+        unrealized_pnl_percentage = (current_price / pos.avg_price - 1) * pos.side * 100
+        
+        if unrealized_pnl_percentage >= order.threshold:
+            limit_price = pos.avg_price * (100 + order.threshold * pos.side) / 100
+            close_order = Limit(order.asset, pos.amount, -pos.side, limit_price)
+            del self.order_queue[order.id]
+            return self._order_limit_force(close_order)
         return 0
 
     def _order_timecut_close(self, order: TimeCutClose, from_queue):
@@ -342,6 +351,7 @@ class BacktestBroker(Broker):
 
     def _order(self, order, from_queue=False):
         if (order.type in [OrderTypes.stop_loss, OrderTypes.timecut_close, OrderTypes.take_profit]) & (order.ticker not in self.portfolio.positions.keys()):
+            if from_queue: del self.order_queue[order.id]
             return 0
         if order.type == OrderTypes.limit:
             return self._order_limit(order, from_queue)
