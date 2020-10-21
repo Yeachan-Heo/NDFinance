@@ -5,10 +5,11 @@ from ndfinance.analysis.technical import RSI
 from ndfinance.visualizers.backtest_visualizer import BasicVisualizer
 from ndfinance.strategies.basic import OscillatorStrategy
 from ndfinance.callbacks import PositionWeightPrinterCallback
+from ndfinance import reporters
 import matplotlib.pyplot as plt
+import yfinance as yf
 
-
-def main(ticker, n=14, path="./bt_results/rsi/", timecut_days=7):
+def main(ticker, n=14, timecut_days=7):
     dp = BacktestDataProvider()
     dp.add_yf_tickers(ticker)
     dp.add_technical_indicators([ticker], [TimeFrames.day], [RSI(n)])
@@ -33,16 +34,9 @@ def main(ticker, n=14, path="./bt_results/rsi/", timecut_days=7):
     engine.register_strategy(strategy)
     log = engine.run()
     
-    analyzer = BacktestAnalyzer(log)
-    analyzer.print()
-    analyzer.export(path=path)
-
-    visualizer = BasicVisualizer()
-    visualizer.plot_log(log)
-
-    visualizer.export(path=path)
+    reporters.make_html(log, ticker, output=f"{ticker}_rsi.html")
 
 
 if __name__ == "__main__":
-    main("^GSPC",  path="./bt_results/rsi/gspc/")
-    main("^IXIC",  path="./bt_results/rsi/ixic/")
+    main("^GSPC")
+    main("^IXIC")

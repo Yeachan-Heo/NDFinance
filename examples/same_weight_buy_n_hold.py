@@ -4,10 +4,11 @@ from ndfinance.analysis.backtest.analyzer import BacktestAnalyzer
 from ndfinance.analysis.technical import RateOfChange
 from ndfinance.visualizers.backtest_visualizer import BasicVisualizer
 from ndfinance.strategies.basic import SameWeightBuyHold
+from ndfinance import reporters
 import matplotlib.pyplot as plt
 
 
-def main(tickers, **kwargs):
+def main(tickers, name, benchmark, **kwargs):
     path="./bt_results/same_weight_bnh/"
     dp = BacktestDataProvider()
     dp.add_yf_tickers(*tickers)
@@ -27,14 +28,7 @@ def main(tickers, **kwargs):
 
     log = engine.run()
     
-    analyzer = BacktestAnalyzer(log)
-    analyzer.print()
-    analyzer.export(path)
-
-    visualizer = BasicVisualizer()
-    visualizer.plot_log(log)
-
-    visualizer.export(path=path)
+    reporters.make_html(log, benchmark, output=f"{name}_bnh.html")
 
 if __name__ == '__main__':
     main(
@@ -49,5 +43,8 @@ if __name__ == '__main__':
             "TWTR",
             "BIDU",
             "BABA",
-        ]
+        ],
+        "FANG",
+        "^IXIC"
+
     )

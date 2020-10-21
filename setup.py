@@ -5,7 +5,7 @@ setup(
     name='NDFinance',
     version='0.0.5',
     packages=['ndfinance', 'ndfinance.core', 'ndfinance.data', 'ndfinance.data.crawlers',
-              'ndfinance.data.crawlers.naver', 'ndfinance.data.crawlers.bitmex', 'ndfinance.utils',
+              'ndfinance.data.crawlers.naver', 'ndfinance.data.crawlers.bitmex', 'ndfinance.utils', 'ndfinance.reporters',
               'ndfinance.utils.backtest', 'ndfinance.brokers', 'ndfinance.brokers.base', 'ndfinance.brokers.backtest',
               'ndfinance.loggers', 'ndfinance.loggers.backtest', 'ndfinance.analysis', 'ndfinance.analysis.backtest',
               'ndfinance.analysis.technical', 'ndfinance.analysis.machine_learning',

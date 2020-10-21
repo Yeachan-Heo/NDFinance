@@ -115,12 +115,12 @@ def calc_sharpe_sortino_ratio(pv_lst, benchmark_lst, timestamp_lst):
     pv_df = pv_df["pv"].resample("1M").ohlc().dropna()
     bench_df = bench_df["benchmark"].resample("1M").ohlc().dropna()
 
-    pv_ret = np.log(pv_df["close"].values / pv_df["open"].values)
-    bench_ret = np.log(bench_df["close"].values / bench_df["open"].values)
+    pv_ret = np.log(pv_df["close"].values / pv_df["open"].values) - 1
+    bench_ret = np.log(bench_df["close"].values / bench_df["open"].values) - 1
 
-    sharpe_ratio = (np.mean(pv_ret) - np.mean(bench_ret)) / np.std(pv_ret)
-    sortino_ratio = (np.mean(pv_ret) - np.mean(bench_ret)) / \
-                    np.std(pv_ret[np.where(np.exp(pv_ret) < 1)])
+    sharpe_ratio = np.mean(pv_ret - bench_ret) / np.std(pv_ret)
+    sortino_ratio = np.mean(pv_ret - bench_ret) / \
+                    np.std(pv_ret[np.where(pv_ret < 0)])
 
     return sharpe_ratio, sortino_ratio
 
