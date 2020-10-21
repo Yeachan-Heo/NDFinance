@@ -27,6 +27,7 @@ ndfinance/data/crawlers/bitmex/gather.py
 ndfinance/data/crawlers/naver/__init__.py
 ndfinance/loggers/__init__.py
 ndfinance/loggers/backtest/__init__.py
+ndfinance/reporters/__init__.py
 ndfinance/strategies/__init__.py
 ndfinance/strategies/basic/__init__.py
 ndfinance/strategies/trend/__init__.py
