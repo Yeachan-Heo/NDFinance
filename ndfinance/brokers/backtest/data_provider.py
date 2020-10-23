@@ -3,7 +3,7 @@ from ndfinance.analysis.technical import TechnicalIndicator
 from ndfinance.brokers.base import TimeIndexer
 from ndfinance.utils import array_utils
 from ndfinance.brokers.base import TimeFrames, asset
-from ndfinance.data.crawlers import get_yf_ticker_async
+from ndfinance.data.crawlers import get_yf_ticker_async, get_fdr_data_async
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -129,9 +129,22 @@ class BacktestDataProvider(DataProvider):
                 timeframe = self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]
                 timeframe_len = len(timeframe)
         return timeframe
+    
+    def get_longest_timestamp_seq(self):
+        timeframe_len = -np.inf
+        timeframe = None
+        for ticker in self.group_ohlcv.keys():
+            if timeframe_len > len(self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]):
+                timeframe = self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]
+                timeframe_len = len(timeframe)
+        return timeframe
 
     def add_yf_tickers(self, *tickers):
         dataframes = get_yf_ticker_async(*tickers)
+        self.add_ohlc_dataframes(dataframes, tickers)
+
+    def add_fdr_tickers(self, *tickers):
+        dataframes = get_fdr_data_async(*tickers)
         self.add_ohlc_dataframes(dataframes, tickers)
 
     def cut_data(self, slip=2):

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 def main(tickers, name, benchmark, **kwargs):
     path="./bt_results/same_weight_bnh/"
     dp = BacktestDataProvider()
-    dp.add_yf_tickers(*tickers)
+    dp.add_fdr_tickers(*tickers)
     dp.add_technical_indicators(tickers, [TimeFrames.day], [RateOfChange(20)])
 
     indexer = TimeIndexer(dp.get_shortest_timestamp_seq())
