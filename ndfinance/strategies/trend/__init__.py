@@ -11,7 +11,7 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
         self.momentum_label = momentum_label
         self.momentum_timeframe = momentum_timeframe
         self.clip_param = clip_param
-        self.n_pos = 5
+        self.n_pos = n_pos
 
     def register_engine(self, *args, **kwargs):
         super(ActualMomentumStratagy, self).register_engine(*args, **kwargs)
@@ -23,9 +23,9 @@ class ActualMomentumStratagy(PeriodicRebalancingStrategy):
         momentum = {
             ticker : self.data_provider.get_ohlcvt(
                 ticker, self.momentum_label, self.momentum_timeframe)[-1]
-            for ticker in self.broker.assets.keys()
+            for ticker in self.universe
         }
-        
+
         momentum_dict = {ticker : momentum[ticker]
             for ticker in sorted(momentum, key=lambda x: momentum[x], reverse=True)[:5] if momentum[ticker] >= self.momentum_threshold}
         

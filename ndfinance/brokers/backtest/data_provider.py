@@ -43,11 +43,11 @@ class BacktestDataProvider(DataProvider):
         timeframe_grp = ticker_grp.create_group(timeframe)
 
         timeframe_grp.create_dataset(name=OHLCVT.timestamp, data=df[timestamp].values)
-        timeframe_grp.create_dataset(name=OHLCVT.open, data=df[open].values)
-        timeframe_grp.create_dataset(name=OHLCVT.high, data=df[high].values)
-        timeframe_grp.create_dataset(name=OHLCVT.low, data=df[low].values)
-        timeframe_grp.create_dataset(name=OHLCVT.close, data=df[close].values)
-        timeframe_grp.create_dataset(name=OHLCVT.volume, data=df[volume].values)
+        timeframe_grp.create_dataset(name=OHLCVT.open, data=np.array(df[open].values, dtype=np.float64))
+        timeframe_grp.create_dataset(name=OHLCVT.high, data=np.array(df[high].values, dtype=np.float64))
+        timeframe_grp.create_dataset(name=OHLCVT.low, data=np.array(df[low].values, dtype=np.float64))
+        timeframe_grp.create_dataset(name=OHLCVT.close, data=np.array(df[close].values, dtype=np.float64))
+        timeframe_grp.create_dataset(name=OHLCVT.volume, data=np.array(df[volume].values, dtype=np.float64))
 
     def add_ohlc_dataframes(self,
                            dataframes_or_paths,
@@ -99,10 +99,17 @@ class BacktestDataProvider(DataProvider):
             ticker = ticker.ticker
         if timeframe is None:
             timeframe = self.primary_timeframe
-        idx = np.where(
-            self.group_ohlcv[ticker][timeframe][OHLCVT.timestamp] <= self.indexer.timestamp)[-1][-1]
+        try:
+            idx = np.where(
+               self.group_ohlcv[ticker][timeframe][OHLCVT.timestamp] <= self.indexer.timestamp)[-1][-1]
+        except IndexError: return None    
         return self.group_ohlcv[ticker][timeframe][label][:idx][-n:]
 
+    def get_ohlcvt_current(self, *args, **kwargs):
+        ret = self.get_ohlcvt(*args, **kwargs)
+        if (ret is None): return None
+        try: return ret[-1]
+        except: return None
     def _add_technical_indicator(self, ticker, timeframe, indicator:TechnicalIndicator):
         self.group_ohlcv[ticker][timeframe].create_dataset(
             indicator.name, indicator(self.group_ohlcv[ticker][timeframe]))
@@ -134,7 +141,7 @@ class BacktestDataProvider(DataProvider):
         timeframe_len = -np.inf
         timeframe = None
         for ticker in self.group_ohlcv.keys():
-            if timeframe_len > len(self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]):
+            if timeframe_len < len(self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]):
                 timeframe = self.group_ohlcv[ticker][self.primary_timeframe][OHLCVT.timestamp]
                 timeframe_len = len(timeframe)
         return timeframe
